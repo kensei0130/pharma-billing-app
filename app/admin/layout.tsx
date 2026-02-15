@@ -38,6 +38,16 @@ export default async function AdminLayout({
                                 </Link>
                             </div>
                         </div>
+                        <div className="flex items-center ml-6 border-l border-slate-700 pl-6">
+                            <Link
+                                href="/ward"
+                                className="flex items-center text-sm font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                            >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                                通常画面へ戻る
+                            </Link>
+                        </div>
+
 
                         <div className="flex items-center space-x-4">
                             <div className="flex flex-col items-end mr-2">
@@ -59,11 +69,11 @@ export default async function AdminLayout({
                         </div>
                     </div>
                 </div>
-            </nav>
+            </nav >
 
             <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
                 {children}
             </main>
-        </div>
+        </div >
     );
 }
