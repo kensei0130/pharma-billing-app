@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 // Define the type locally if not available globally yet, or assume it matches schema
 type AnnouncementType = {
@@ -17,6 +18,11 @@ export default function AnnouncementTicker({ announcements }: { announcements: A
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementType | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Filter active announcements just in case, though server should pass only active ones
     // and sort by priority/date (already done by server)
@@ -104,16 +110,13 @@ export default function AnnouncementTicker({ announcements }: { announcements: A
                 )}
             </div>
 
-            {/* Modal */}
-            {isModalOpen && selectedAnnouncement && (
-                <div className="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                    {/* Background overlay */}
+            {/* Modal Portal */}
+            {mounted && isModalOpen && selectedAnnouncement && createPortal(
+                <div className="relative z-[9999]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
                     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={closeModal}></div>
 
-                    {/* Modal positioning container */}
                     <div className="fixed inset-0 z-10 overflow-y-auto">
                         <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                            {/* Modal panel */}
                             <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
                                 <div>
                                     <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${(selectedAnnouncement.priority ?? 0) === 2 ? 'bg-red-100' : (selectedAnnouncement.priority ?? 0) === 1 ? 'bg-yellow-100' : 'bg-blue-100'}`}>
@@ -125,8 +128,8 @@ export default function AnnouncementTicker({ announcements }: { announcements: A
                                         <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
                                             {selectedAnnouncement.title}
                                         </h3>
-                                        <div className="mt-2">
-                                            <p className="text-sm text-gray-500 text-left whitespace-pre-wrap">
+                                        <div className="mt-2 text-left">
+                                            <p className="text-sm text-gray-500 whitespace-pre-wrap">
                                                 {selectedAnnouncement.content}
                                             </p>
                                             <p className="mt-4 text-xs text-gray-400 text-right">
@@ -147,7 +150,8 @@ export default function AnnouncementTicker({ announcements }: { announcements: A
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
