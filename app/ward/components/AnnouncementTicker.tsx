@@ -106,42 +106,44 @@ export default function AnnouncementTicker({ announcements }: { announcements: A
 
             {/* Modal */}
             {isModalOpen && selectedAnnouncement && (
-                <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                        {/* Background overlay */}
-                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={closeModal}></div>
+                <div className="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    {/* Background overlay */}
+                    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={closeModal}></div>
 
-                        {/* Modal panel */}
-                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                        <div className="relative z-10 inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                            <div>
-                                <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${(selectedAnnouncement.priority ?? 0) === 2 ? 'bg-red-100' : (selectedAnnouncement.priority ?? 0) === 1 ? 'bg-yellow-100' : 'bg-blue-100'}`}>
-                                    <svg className={`h-6 w-6 ${(selectedAnnouncement.priority ?? 0) === 2 ? 'text-red-600' : (selectedAnnouncement.priority ?? 0) === 1 ? 'text-yellow-600' : 'text-blue-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div className="mt-3 text-center sm:mt-5">
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                        {selectedAnnouncement.title}
-                                    </h3>
-                                    <div className="mt-2">
-                                        <p className="text-sm text-gray-500 text-left whitespace-pre-wrap">
-                                            {selectedAnnouncement.content}
-                                        </p>
-                                        <p className="mt-4 text-xs text-gray-400 text-right">
-                                            {new Date(selectedAnnouncement.createdAt).toLocaleDateString()} {new Date(selectedAnnouncement.createdAt).toLocaleTimeString()}
-                                        </p>
+                    {/* Modal positioning container */}
+                    <div className="fixed inset-0 z-10 overflow-y-auto">
+                        <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                            {/* Modal panel */}
+                            <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                                <div>
+                                    <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${(selectedAnnouncement.priority ?? 0) === 2 ? 'bg-red-100' : (selectedAnnouncement.priority ?? 0) === 1 ? 'bg-yellow-100' : 'bg-blue-100'}`}>
+                                        <svg className={`h-6 w-6 ${(selectedAnnouncement.priority ?? 0) === 2 ? 'text-red-600' : (selectedAnnouncement.priority ?? 0) === 1 ? 'text-yellow-600' : 'text-blue-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div className="mt-3 text-center sm:mt-5">
+                                        <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                            {selectedAnnouncement.title}
+                                        </h3>
+                                        <div className="mt-2">
+                                            <p className="text-sm text-gray-500 text-left whitespace-pre-wrap">
+                                                {selectedAnnouncement.content}
+                                            </p>
+                                            <p className="mt-4 text-xs text-gray-400 text-right">
+                                                {new Date(selectedAnnouncement.createdAt).toLocaleDateString()} {new Date(selectedAnnouncement.createdAt).toLocaleTimeString()}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="mt-5 sm:mt-6">
-                                <button
-                                    type="button"
-                                    className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
-                                    onClick={closeModal}
-                                >
-                                    閉じる
-                                </button>
+                                <div className="mt-5 sm:mt-6">
+                                    <button
+                                        type="button"
+                                        className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
+                                        onClick={closeModal}
+                                    >
+                                        閉じる
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
