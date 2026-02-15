@@ -36,6 +36,9 @@ export default async function AdminLayout({
                                 <Link href="/admin/history" className="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
                                     請求履歴
                                 </Link>
+                                <Link href="/admin/announcements" className="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                                    お知らせ管理
+                                </Link>
                             </div>
                         </div>
                         <div className="flex items-center ml-6 border-l border-slate-700 pl-6">
