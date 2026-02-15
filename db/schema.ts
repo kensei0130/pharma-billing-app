@@ -95,6 +95,7 @@ export const announcements = sqliteTable("announcements", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     title: text("title").notNull(),
     content: text("content"),
+    priority: integer("priority").default(0), // 0: Low, 1: Medium, 2: High
     isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
     createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });

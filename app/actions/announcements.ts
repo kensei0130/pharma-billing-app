@@ -6,27 +6,31 @@ import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function getAnnouncements() {
-    return await db.select().from(announcements).orderBy(desc(announcements.createdAt));
+    return await db.select().from(announcements).orderBy(desc(announcements.priority), desc(announcements.createdAt));
 }
 
 export async function getActiveAnnouncements() {
-    return await db.select().from(announcements).where(eq(announcements.isActive, true)).orderBy(desc(announcements.createdAt));
+    return await db.select().from(announcements)
+        .where(eq(announcements.isActive, true))
+        .orderBy(desc(announcements.priority), desc(announcements.createdAt));
 }
 
-export async function createAnnouncement(data: { title: string; content?: string }) {
+export async function createAnnouncement(data: { title: string; content?: string; priority: number }) {
     await db.insert(announcements).values({
         title: data.title,
         content: data.content,
+        priority: data.priority,
     });
     revalidatePath("/admin/announcements");
     revalidatePath("/ward");
 }
 
-export async function updateAnnouncement(id: number, data: { title: string; content?: string }) {
+export async function updateAnnouncement(id: number, data: { title: string; content?: string; priority?: number }) {
     await db.update(announcements)
         .set({
             title: data.title,
             content: data.content,
+            priority: data.priority,
         })
         .where(eq(announcements.id, id));
     revalidatePath("/admin/announcements");
