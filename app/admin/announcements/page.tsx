@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
-import { getAnnouncements, createAnnouncement, updateAnnouncement, toggleAnnouncementStatus, deleteAnnouncement } from "@/app/actions/announcements";
+import { getAnnouncements, createAnnouncement } from "@/app/actions/announcements";
 import { redirect } from "next/navigation";
+import AnnouncementManager from "./AnnouncementManager";
 
 export default async function AdminAnnouncementsPage() {
     const session = await auth();
@@ -92,61 +93,7 @@ export default async function AdminAnnouncementsPage() {
                 </div>
             </div>
 
-            <div className="bg-white shadow sm:rounded-md">
-                <ul role="list" className="divide-y divide-gray-100">
-                    {announcements.map((announcement) => (
-                        <li key={announcement.id} className="flex flex-col sm:flex-row justify-between gap-x-6 py-5 px-4 sm:px-6 hover:bg-gray-50">
-                            <div className="flex min-w-0 gap-x-4">
-                                <div className="min-w-0 flex-auto">
-                                    <div className="flex items-center gap-x-2">
-                                        <p className="text-sm font-semibold leading-6 text-gray-900">{announcement.title}</p>
-                                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset 
-                                            ${announcement.priority === 2 ? 'bg-red-50 text-red-700 ring-red-600/20' :
-                                                announcement.priority === 1 ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20' :
-                                                    'bg-blue-50 text-blue-700 ring-blue-600/20'}`}>
-                                            {announcement.priority === 2 ? '高' : announcement.priority === 1 ? '中' : '低'}
-                                        </span>
-                                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${announcement.isActive ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-gray-50 text-gray-600 ring-gray-500/10'}`}>
-                                            {announcement.isActive ? '公開中' : '非公開'}
-                                        </span>
-                                    </div>
-                                    <p className="mt-1 truncate text-xs leading-5 text-gray-500">{announcement.content}</p>
-                                    <p className="mt-1 truncate text-xs leading-5 text-gray-400">作成日: {new Date(announcement.createdAt).toLocaleDateString()} {new Date(announcement.createdAt).toLocaleTimeString()}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-x-4 mt-4 sm:mt-0">
-                                <form action={async () => {
-                                    "use server";
-                                    await toggleAnnouncementStatus(announcement.id, !announcement.isActive);
-                                }}>
-                                    <button
-                                        type="submit"
-                                        className="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 block"
-                                    >
-                                        {announcement.isActive ? '非公開にする' : '公開する'}
-                                    </button>
-                                </form>
-                                <form action={async () => {
-                                    "use server";
-                                    await deleteAnnouncement(announcement.id);
-                                }}>
-                                    <button
-                                        type="submit"
-                                        className="rounded-md bg-red-50 px-2.5 py-1.5 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-100 block"
-                                    >
-                                        削除
-                                    </button>
-                                </form>
-                            </div>
-                        </li>
-                    ))}
-                    {announcements.length === 0 && (
-                        <li className="px-4 py-5 sm:px-6 text-center text-gray-500 text-sm">
-                            お知らせはまだありません。
-                        </li>
-                    )}
-                </ul>
-            </div>
+            <AnnouncementManager initialAnnouncements={announcements} />
         </div>
     );
 }
