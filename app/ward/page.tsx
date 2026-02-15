@@ -1,4 +1,5 @@
 import { auth, signOut } from "@/auth";
+import Link from "next/link";
 import { getDrugs, getWardConstantDrugs, getWardOrders, getConstantSets } from "@/db/queries";
 import WardDashboardClient from "./WardDashboardClient";
 
@@ -23,6 +24,14 @@ export default async function WardDashboard() {
                         </div>
 
                         <div className="flex items-center space-x-6">
+                            {session?.user?.role === "admin" && (
+                                <Link
+                                    href="/admin"
+                                    className="hidden md:inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-colors"
+                                >
+                                    管理画面へ
+                                </Link>
+                            )}
                             <div className="hidden md:flex flex-col items-end mr-2">
                                 <span className="text-sm font-bold text-slate-700">{session?.user?.name}</span>
                                 <span className="text-xs text-slate-500 font-mono">ID: {session?.user?.id}</span>
