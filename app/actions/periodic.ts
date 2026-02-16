@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { orders, wards, orderItems, drugs, systemSettings } from "@/db/schema";
-import { eq, and, desc, sql, inArray, gte, lte } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, gte, lte, like } from "drizzle-orm";
 import { getPeriodicSettings } from "./settings";
 import { getNextPayoutDates, getDeadline, isDeadlinePassed } from "@/lib/date-utils";
 import { auth } from "@/auth";
@@ -122,12 +122,19 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
     return Array.from(cyclesMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
+// Helper to get normalized date condition
+function getDateCondition(dateStr: string) {
+    // Matches YYYY-MM-DD or YYYY-MM-DDT...
+    return like(orders.scheduledDate, `${dateStr}%`);
+}
+
 export async function getPeriodicOrdersByDate(dateStr: string) {
     // Fetch orders for this specific Periodic Cycle
+    // Use LIKE to match date string regardless of time component
     const rawOrders = await db.query.orders.findMany({
         where: and(
             eq(orders.type, "定時"),
-            eq(orders.scheduledDate, dateStr)
+            getDateCondition(dateStr)
         ),
         with: {
             ward: true,
@@ -160,7 +167,7 @@ export async function bulkApproveCycle(dateStr: string) {
         // 1. Get all pending orders for this date
         const targetOrders = await db.select().from(orders).where(and(
             eq(orders.type, "定時"),
-            eq(orders.scheduledDate, dateStr),
+            getDateCondition(dateStr),
             eq(orders.status, "承認待ち") // Only approve pending ones
         ));
 
