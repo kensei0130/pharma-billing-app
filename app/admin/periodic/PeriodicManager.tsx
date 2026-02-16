@@ -195,7 +195,16 @@ export default function PeriodicManager({
                                                         <span className="text-slate-300">|</span>
                                                         <span>{order.items.length} 品目</span>
                                                         <span className="text-slate-300">|</span>
-                                                        <span>{new Date(order.orderDate).toLocaleString('ja-JP')}</span>
+                                                        {/* Suppress hydration warning for date/time */}
+                                                        <span suppressHydrationWarning>
+                                                            {new Date(order.orderDate).toLocaleString('ja-JP', {
+                                                                year: 'numeric',
+                                                                month: '2-digit',
+                                                                day: '2-digit',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
