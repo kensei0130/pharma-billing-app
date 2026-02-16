@@ -16,9 +16,11 @@ export async function getActiveAnnouncements() {
 }
 
 export async function createAnnouncement(data: { title: string; content?: string; priority: number }) {
-    // Get max display_order to append to end
-    const lastItem = await db.select({ maxOrder: sql<number>`max(${announcements.displayOrder})` }).from(announcements).get();
-    const newOrder = (lastItem?.maxOrder ?? -1) + 1;
+    // Get min display_order to prepend to start
+    const firstItem = await db.select({ minOrder: sql<number>`min(${announcements.displayOrder})` }).from(announcements).get();
+    // If table is empty, minOrder is null, start at 0.
+    // If not empty, subtract 1 from minOrder to be before it.
+    const newOrder = (firstItem?.minOrder ?? 0) - 1;
 
     await db.insert(announcements).values({
         title: data.title,
@@ -28,6 +30,7 @@ export async function createAnnouncement(data: { title: string; content?: string
     });
     revalidatePath("/admin/announcements");
     revalidatePath("/ward");
+    revalidatePath("/login");
 }
 
 export async function updateAnnouncement(id: number, data: { title: string; content?: string; priority?: number }) {
@@ -40,6 +43,7 @@ export async function updateAnnouncement(id: number, data: { title: string; cont
         .where(eq(announcements.id, id));
     revalidatePath("/admin/announcements");
     revalidatePath("/ward");
+    revalidatePath("/login");
 }
 
 export async function updateAnnouncementOrder(items: { id: number; displayOrder: number }[]) {
@@ -52,6 +56,7 @@ export async function updateAnnouncementOrder(items: { id: number; displayOrder:
     });
     revalidatePath("/admin/announcements");
     revalidatePath("/ward");
+    revalidatePath("/login");
 }
 
 export async function toggleAnnouncementStatus(id: number, isActive: boolean) {
@@ -60,10 +65,12 @@ export async function toggleAnnouncementStatus(id: number, isActive: boolean) {
         .where(eq(announcements.id, id));
     revalidatePath("/admin/announcements");
     revalidatePath("/ward");
+    revalidatePath("/login");
 }
 
 export async function deleteAnnouncement(id: number) {
     await db.delete(announcements).where(eq(announcements.id, id));
     revalidatePath("/admin/announcements");
     revalidatePath("/ward");
+    revalidatePath("/login");
 }
