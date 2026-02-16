@@ -71,7 +71,9 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
         // Use local YYYY-MM-DD to match scheduledDate format
         // d is created from new Date(YYYY-MM-DD) so it should be local midnight (or UTC midnight depending on env, but consistent)
         // To be safe, format as YYYY-MM-DD
-        const dateStr = d.toISOString().split('T')[0];
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${d.getFullYear()}-${month}-${day}`;
 
         cyclesMap.set(dateStr, {
             date: dateStr,

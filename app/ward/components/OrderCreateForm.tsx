@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createOrder, updateOrder } from "@/app/actions/orders";
-import { getNextPayoutDates, formatDate, isDeadlinePassed, getDeadline } from "@/lib/date-utils";
+import { getNextPayoutDates, formatDate, isDeadlinePassed, getDeadline, toLocalISOString } from "@/lib/date-utils";
 
 type Drug = {
     id: number;
@@ -49,10 +49,10 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
             if (!scheduledDate) {
                 const validDate = nextDates.find(d => !isDeadlinePassed(d, periodicSettings.deadlineDaysBefore));
                 if (validDate) {
-                    setScheduledDate(validDate.toISOString());
+                    setScheduledDate(toLocalISOString(validDate));
                 } else if (nextDates.length > 0) {
                     // All passed? Just select first next.
-                    setScheduledDate(nextDates[0].toISOString());
+                    setScheduledDate(toLocalISOString(nextDates[0]));
                 }
             }
         }
@@ -234,8 +234,9 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                                     {payoutDates.map((date) => {
                                         const isPassed = isDeadlinePassed(date, periodicSettings.deadlineDaysBefore);
                                         const deadlineDate = getDeadline(date, periodicSettings.deadlineDaysBefore);
+                                        const dateVal = toLocalISOString(date);
                                         return (
-                                            <option key={date.toISOString()} value={date.toISOString()}>
+                                            <option key={dateVal} value={dateVal}>
                                                 {formatDate(date)} 払出 (締切: {deadlineDate.getMonth() + 1}/{deadlineDate.getDate()})
                                                 {isPassed ? " [締切過ぎ]" : ""}
                                             </option>
