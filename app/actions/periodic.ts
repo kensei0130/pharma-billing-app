@@ -16,10 +16,14 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
     const end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth() + 3, 1); // Default: 3 months future
 
     // 1. Get distinct scheduled dates from existing orders within range
+    // Convert dates to YYYY-MM-DD string for text comparison
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = end.toISOString().split('T')[0];
+
     const existingDateCondition = and(
         eq(orders.type, "定時"),
-        gte(orders.scheduledDate, start.toISOString()),
-        lte(orders.scheduledDate, end.toISOString())
+        gte(orders.scheduledDate, startStr),
+        lte(orders.scheduledDate, endStr)
     );
 
     const existingDates = await db
@@ -32,14 +36,20 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
     const generatedDates: Date[] = [];
 
     // Logic to find first payout date on or after `start`
-    let requestDate = new Date(start);
+    // Ensure we start from the correct date boundary
+    let requestDate = new Date(startStr);
+
+    // Normalize time to avoid timezone issues when adding days
     requestDate.setHours(0, 0, 0, 0);
 
     let diff = payoutDayOfWeek - requestDate.getDay();
     if (diff < 0) diff += 7;
     requestDate.setDate(requestDate.getDate() + diff); // First payout date
 
-    while (requestDate <= end) {
+    const endDateObj = new Date(endStr);
+    endDateObj.setHours(23, 59, 59, 999);
+
+    while (requestDate <= endDateObj) {
         generatedDates.push(new Date(requestDate));
         requestDate.setDate(requestDate.getDate() + 7);
     }
@@ -54,7 +64,11 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
 
     // Add generated defaults
     generatedDates.forEach(d => {
-        const dateStr = d.toISOString();
+        // Use local YYYY-MM-DD to match scheduledDate format
+        // d is created from new Date(YYYY-MM-DD) so it should be local midnight (or UTC midnight depending on env, but consistent)
+        // To be safe, format as YYYY-MM-DD
+        const dateStr = d.toISOString().split('T')[0];
+
         cyclesMap.set(dateStr, {
             date: dateStr,
             isUpcoming: true,
@@ -96,7 +110,7 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
 
 export async function getPeriodicOrdersByDate(dateStr: string) {
     // Fetch orders for this specific Periodic Cycle
-    return await db.query.orders.findMany({
+    const rawOrders = await db.query.orders.findMany({
         where: and(
             eq(orders.type, "定時"),
             eq(orders.scheduledDate, dateStr)
@@ -111,6 +125,17 @@ export async function getPeriodicOrdersByDate(dateStr: string) {
         },
         orderBy: [desc(orders.orderDate)]
     });
+
+    // Remap to flatten items for ApprovalOrderDetail compatibility
+    return rawOrders.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+            ...item,
+            drugName: item.drug.name,
+            drugUnit: item.drug.unit,
+            // drug object is also kept if needed, but existing comp uses drugName
+        }))
+    }));
 }
 
 export async function bulkApproveCycle(dateStr: string) {
