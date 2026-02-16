@@ -1,28 +1,48 @@
 import { db } from "@/db";
 import { orders, wards, orderItems, drugs, systemSettings } from "@/db/schema";
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, gte, lte } from "drizzle-orm";
 import { getPeriodicSettings } from "./settings";
 import { getNextPayoutDates, getDeadline, isDeadlinePassed } from "@/lib/date-utils";
 import { auth } from "@/auth";
 
-export async function getPeriodicCycles() {
+export async function getPeriodicCycles(startDate?: string, endDate?: string) {
     const { payoutDayOfWeek, deadlineDaysBefore } = await getPeriodicSettings();
 
-    // Get distinct scheduled dates from existing orders
+    // Default range if not provided: Show recent past (4 weeks) and future (8 weeks)
+    const now = new Date();
+    const start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth() - 1, 1); // Default: 1 month ago
+    const end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth() + 3, 1); // Default: 3 months future
+
+    // 1. Get distinct scheduled dates from existing orders within range
+    const existingDateCondition = and(
+        eq(orders.type, "定時"),
+        gte(orders.scheduledDate, start.toISOString()),
+        lte(orders.scheduledDate, end.toISOString())
+    );
+
     const existingDates = await db
         .selectDistinct({ scheduledDate: orders.scheduledDate })
         .from(orders)
-        .where(eq(orders.type, "定時"))
+        .where(existingDateCondition)
         .orderBy(desc(orders.scheduledDate));
 
-    // Get upcoming generated dates
-    const upcomingDates = getNextPayoutDates(new Date(), payoutDayOfWeek, 8);
+    // 2. Generate generic dates within range
+    const generatedDates: Date[] = [];
 
-    // Merge: Create a set of "Cycles"
-    // We want to show:
-    // 1. Upcoming cycles (even if no orders yet)
-    // 2. Past cycles that have orders
+    // Logic to find first payout date on or after `start`
+    let requestDate = new Date(start);
+    requestDate.setHours(0, 0, 0, 0);
 
+    let diff = payoutDayOfWeek - requestDate.getDay();
+    if (diff < 0) diff += 7;
+    requestDate.setDate(requestDate.getDate() + diff); // First payout date
+
+    while (requestDate <= end) {
+        generatedDates.push(new Date(requestDate));
+        requestDate.setDate(requestDate.getDate() + 7);
+    }
+
+    // Merge
     const cyclesMap = new Map<string, {
         date: string;
         isUpcoming: boolean;
@@ -30,8 +50,8 @@ export async function getPeriodicCycles() {
         status: string
     }>();
 
-    // Add upcoming defaults
-    upcomingDates.forEach(d => {
+    // Add generated defaults
+    generatedDates.forEach(d => {
         const dateStr = d.toISOString();
         cyclesMap.set(dateStr, {
             date: dateStr,
@@ -57,12 +77,11 @@ export async function getPeriodicCycles() {
             const cycle = cyclesMap.get(record.scheduledDate)!;
             cycle.orderCount = count;
         } else {
-            // This is a past cycle or far future one not in our generic list
             cyclesMap.set(record.scheduledDate, {
                 date: record.scheduledDate,
-                isUpcoming: new Date(record.scheduledDate) >= new Date(), // Rough check
+                isUpcoming: new Date(record.scheduledDate) >= new Date(),
                 orderCount: count,
-                status: "過去の請求" // Simplified
+                status: "過去の請求"
             });
         }
     }
