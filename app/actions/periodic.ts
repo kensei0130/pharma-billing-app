@@ -19,11 +19,15 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
     // Convert dates to YYYY-MM-DD string for text comparison
     const startStr = start.toISOString().split('T')[0];
     const endStr = end.toISOString().split('T')[0];
+    // For end date comparison, we want to include the entire day, so we compare up to the very end of that day string wise
+    // or just append a high time value if comparing strings against ISO strings.
+    // T23:59:59.999Z is safer to capture anything on that day.
+    const endStrInclusive = endStr + "T23:59:59.999Z";
 
     const existingDateCondition = and(
         eq(orders.type, "定時"),
         gte(orders.scheduledDate, startStr),
-        lte(orders.scheduledDate, endStr)
+        lte(orders.scheduledDate, endStrInclusive)
     );
 
     const existingDates = await db
