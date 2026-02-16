@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/db";
 import { orders, wards, orderItems, drugs, systemSettings } from "@/db/schema";
 import { eq, and, desc, sql, inArray, gte, lte } from "drizzle-orm";

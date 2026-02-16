@@ -119,7 +119,7 @@ export async function getOrderDetails(orderId: number) {
     return order;
 }
 
-export async function updateOrder(orderId: number, items: CartItem[], orderType: "臨時" | "定時") {
+export async function updateOrder(orderId: number, items: CartItem[], orderType: "臨時" | "定時", scheduledDate?: string) {
     const session = await auth();
     if (!session?.user?.id) {
         return { success: false, message: "認証されていません" };
