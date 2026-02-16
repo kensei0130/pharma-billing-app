@@ -50,7 +50,7 @@ export default async function AdminPeriodicPage({
     const now = new Date();
     // Replicating default logic for UI display if needed, or pass undefined to let Client use its logic?
     // Client Component uses state `useState(filterStart)`.
-    const defaultStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+    const defaultStart = new Date().toISOString().split('T')[0]; // Default: Today
     const defaultEnd = new Date(now.getFullYear(), now.getMonth() + 3, 1).toISOString().split('T')[0];
 
     return (

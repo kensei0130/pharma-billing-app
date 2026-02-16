@@ -12,7 +12,7 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
 
     // Default range if not provided: Show recent past (4 weeks) and future (8 weeks)
     const now = new Date();
-    const start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth() - 1, 1); // Default: 1 month ago
+    const start = startDate ? new Date(startDate) : new Date(); // Default: Today
     const end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth() + 3, 1); // Default: 3 months future
 
     // 1. Get distinct scheduled dates from existing orders within range
