@@ -85,7 +85,12 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
     for (const record of existingDates) {
         if (!record.scheduledDate) continue;
 
+        // Normalize DB Date to YYYY-MM-DD to match generated keys
+        // DB might store as "YYYY-MM-DD" or "YYYY-MM-DDT..."
+        const recordDateStr = new Date(record.scheduledDate).toISOString().split('T')[0];
+
         // Count orders for this date
+        // Note: usage of 'record.scheduledDate' in query must match DB value, but key in map is normalized
         const countRes = await db
             .select({ count: sql<number>`count(*)` })
             .from(orders)
@@ -93,16 +98,19 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
 
         const count = countRes[0].count;
 
-        if (cyclesMap.has(record.scheduledDate)) {
-            const cycle = cyclesMap.get(record.scheduledDate)!;
+        if (cyclesMap.has(recordDateStr)) {
+            const cycle = cyclesMap.get(recordDateStr)!;
             cycle.orderCount = count;
+            // If it exists in map (generated), it is "upcoming" or "active" based on logic.
+            // But if it has orders, we might want to ensure status reflects that?
+            // "受付中" is default for generated.
         } else {
             // User requested that existing orders be treated as "Accepted" (active) rather than past
             // Or simple logic: if it has orders, it's effectively an active record until closed/archived?
             // "過去の請求ではなく、受付中としてください"
-            cyclesMap.set(record.scheduledDate, {
-                date: record.scheduledDate,
-                isUpcoming: new Date(record.scheduledDate) >= new Date(),
+            cyclesMap.set(recordDateStr, {
+                date: recordDateStr,
+                isUpcoming: new Date(recordDateStr) >= new Date(),
                 orderCount: count,
                 status: "受付中" // Always show as Accepting if it was found in orders within range
             });
