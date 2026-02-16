@@ -48,6 +48,7 @@ type ConstantSet = {
     id: number;
     wardId: string;
     name: string;
+    items: ConstantDrug[]; // Assuming items are nested or fetched separately, but based on usage in ConstantSetEditor
 };
 
 export default function WardDashboardClient({
@@ -60,7 +61,7 @@ export default function WardDashboardClient({
     wardId: string;
     drugs: Drug[],
     constantDrugs: ConstantDrug[],
-    sets: ConstantSet[],
+    sets: ConstantSet[], // Updated type to be more generic if needed, but ConstantSetEditor expects specific props
     orderHistory: Order[]
 }) {
     const [activeTab, setActiveTab] = useState<"create" | "constant" | "history" | "set-editor">("create");
@@ -102,47 +103,50 @@ export default function WardDashboardClient({
         <div className="max-w-5xl mx-auto">
             {/* Tab Navigation */}
             <div className="flex justify-center mb-8">
-                <div className="bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm inline-flex">
-                    <button
-                        onClick={() => handleTabChange("create")}
-                        className={`flex items-center px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === "create"
-                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                            }`}
-                    >
-                        <span className="mr-2 text-lg">📝</span>
-                        {editingOrder ? "請求を編集中" : "新規請求作成"}
-                    </button>
-                    <button
-                        onClick={() => handleTabChange("constant")}
-                        className={`flex items-center px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === "constant"
-                            ? "bg-green-600 text-white shadow-md shadow-green-200"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                            }`}
-                    >
-                        <span className="mr-2 text-lg">📦</span>
-                        セット請求
-                    </button>
-                    <button
-                        onClick={() => handleTabChange("history")}
-                        className={`flex items-center px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === "history"
-                            ? "bg-slate-600 text-white shadow-md shadow-slate-200"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                            }`}
-                    >
-                        <span className="mr-2 text-lg">🕰️</span>
-                        請求履歴
-                    </button>
-                    <button
-                        onClick={() => handleTabChange("set-editor")}
-                        className={`flex items-center px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === "set-editor"
-                            ? "bg-orange-500 text-white shadow-md shadow-orange-200"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                            }`}
-                    >
-                        <span className="mr-2 text-lg">⚙️</span>
-                        セット管理
-                    </button>
+                {/* Mobile: Scrollable horizontal list. Desktop: Centered inline-flex */}
+                <div className="w-full overflow-x-auto pb-2 md:pb-0 md:w-auto text-center no-scrollbar">
+                    <div className="bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm inline-flex min-w-max md:min-w-0">
+                        <button
+                            onClick={() => handleTabChange("create")}
+                            className={`flex items-center px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === "create"
+                                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                                }`}
+                        >
+                            <span className="mr-2 text-lg">📝</span>
+                            {editingOrder ? "請求を編集中" : "新規請求作成"}
+                        </button>
+                        <button
+                            onClick={() => handleTabChange("constant")}
+                            className={`flex items-center px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === "constant"
+                                ? "bg-green-600 text-white shadow-md shadow-green-200"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                                }`}
+                        >
+                            <span className="mr-2 text-lg">📦</span>
+                            セット請求
+                        </button>
+                        <button
+                            onClick={() => handleTabChange("history")}
+                            className={`flex items-center px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === "history"
+                                ? "bg-slate-600 text-white shadow-md shadow-slate-200"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                                }`}
+                        >
+                            <span className="mr-2 text-lg">🕰️</span>
+                            請求履歴
+                        </button>
+                        <button
+                            onClick={() => handleTabChange("set-editor")}
+                            className={`flex items-center px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === "set-editor"
+                                ? "bg-orange-500 text-white shadow-md shadow-orange-200"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                                }`}
+                        >
+                            <span className="mr-2 text-lg">⚙️</span>
+                            セット管理
+                        </button>
+                    </div>
                 </div>
             </div>
 
