@@ -68,8 +68,8 @@ export default function AnnouncementTicker({ announcements }: { announcements: A
 
     return (
         <>
-            <div className="flex items-center bg-white rounded-md border border-slate-200 px-3 py-1 ml-4 shadow-sm w-[600px]">
-                <span className="flex-shrink-0 text-xs font-bold text-slate-500 mr-2 border-r border-slate-200 pr-2">
+            <div className="flex items-center bg-white rounded-md border border-slate-200 px-2 sm:px-3 py-1 shadow-sm w-full max-w-[600px] ml-0 md:ml-4">
+                <span className="hidden sm:inline-block flex-shrink-0 text-xs font-bold text-slate-500 mr-2 border-r border-slate-200 pr-2">
                     お知らせ
                 </span>
 
