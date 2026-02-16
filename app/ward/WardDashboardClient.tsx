@@ -48,7 +48,7 @@ type ConstantSet = {
     id: number;
     wardId: string;
     name: string;
-    items: ConstantDrug[]; // Assuming items are nested or fetched separately, but based on usage in ConstantSetEditor
+    items?: ConstantDrug[]; // Made optional
 };
 
 export default function WardDashboardClient({
@@ -56,13 +56,15 @@ export default function WardDashboardClient({
     drugs,
     constantDrugs,
     sets,
-    orderHistory
+    orderHistory,
+    periodicSettings
 }: {
     wardId: string;
     drugs: Drug[],
     constantDrugs: ConstantDrug[],
-    sets: ConstantSet[], // Updated type to be more generic if needed, but ConstantSetEditor expects specific props
-    orderHistory: Order[]
+    sets: ConstantSet[],
+    orderHistory: Order[],
+    periodicSettings: { payoutDayOfWeek: number; deadlineDaysBefore: number }
 }) {
     const [activeTab, setActiveTab] = useState<"create" | "constant" | "history" | "set-editor">("create");
     const [editingOrder, setEditingOrder] = useState<EditingOrder | null>(null);
@@ -166,6 +168,7 @@ export default function WardDashboardClient({
                             drugs={drugs}
                             initialOrder={editingOrder}
                             onCancelEdit={handleCancelEdit}
+                            periodicSettings={periodicSettings}
                         />
                     </div>
                 )}

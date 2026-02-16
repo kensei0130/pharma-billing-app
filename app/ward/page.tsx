@@ -2,6 +2,7 @@ import { auth, signOut } from "@/auth";
 import Link from "next/link";
 import { getDrugs, getWardConstantDrugs, getWardOrders, getConstantSets } from "@/db/queries";
 import { getActiveAnnouncements } from "@/app/actions/announcements";
+import { getPeriodicSettings } from "@/app/actions/settings";
 import WardDashboardClient from "./WardDashboardClient";
 import AnnouncementTicker from "./components/AnnouncementTicker";
 
@@ -12,6 +13,7 @@ export default async function WardDashboard() {
     const sets = session?.user?.id ? await getConstantSets(session.user.id) : [];
     const orderHistory = session?.user?.id ? await getWardOrders(session.user.id) : [];
     const announcements = await getActiveAnnouncements();
+    const periodicSettings = await getPeriodicSettings();
 
     return (
         <div className="min-h-screen bg-slate-100/50">
@@ -73,6 +75,7 @@ export default async function WardDashboard() {
                     constantDrugs={constantDrugs}
                     sets={sets}
                     orderHistory={orderHistory}
+                    periodicSettings={periodicSettings}
                 />
             </main>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createOrder, updateOrder } from "@/app/actions/orders";
+import { getNextPayoutDates, formatDate, isDeadlinePassed, getDeadline } from "@/lib/date-utils";
 
 type Drug = {
     id: number;
@@ -17,10 +18,11 @@ type EditingOrder = {
     items: { drugId: number; quantity: number }[];
 };
 
-export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit }: {
+export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, periodicSettings }: {
     drugs: Drug[],
     initialOrder?: EditingOrder | null,
-    onCancelEdit?: () => void
+    onCancelEdit?: () => void,
+    periodicSettings: { payoutDayOfWeek: number; deadlineDaysBefore: number }
 }) {
     const [cart, setCart] = useState<{ drugId: number; name: string; quantity: number; unit: string }[]>([]);
 
@@ -31,6 +33,43 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit }: {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState("");
     const [orderType, setOrderType] = useState<"臨時" | "定時">("臨時");
+
+    // Periodic Billing State
+    const [scheduledDate, setScheduledDate] = useState<string>("");
+    const [payoutDates, setPayoutDates] = useState<Date[]>([]);
+    const [isDeadlineWarn, setIsDeadlineWarn] = useState(false);
+
+    // Initialize Periodic Date Options
+    useEffect(() => {
+        if (orderType === "定時") {
+            const nextDates = getNextPayoutDates(new Date(), periodicSettings.payoutDayOfWeek, 5);
+            setPayoutDates(nextDates);
+
+            // Auto Select Nearest Valid Date if not set
+            if (!scheduledDate) {
+                const validDate = nextDates.find(d => !isDeadlinePassed(d, periodicSettings.deadlineDaysBefore));
+                if (validDate) {
+                    setScheduledDate(validDate.toISOString());
+                } else if (nextDates.length > 0) {
+                    // All passed? Just select first next.
+                    setScheduledDate(nextDates[0].toISOString());
+                }
+            }
+        }
+    }, [orderType, periodicSettings, scheduledDate]);
+
+    // Check Deadline on Selection Change
+    useEffect(() => {
+        if (orderType === "定時" && scheduledDate) {
+            const date = new Date(scheduledDate);
+            if (isDeadlinePassed(date, periodicSettings.deadlineDaysBefore)) {
+                setIsDeadlineWarn(true);
+            } else {
+                setIsDeadlineWarn(false);
+            }
+        }
+    }, [scheduledDate, orderType, periodicSettings]);
+
 
     // Initialize from props
     useEffect(() => {
@@ -86,8 +125,13 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit }: {
 
     const handleSubmit = async () => {
         if (cart.length === 0) return;
-        const action = initialOrder ? "更新" : "作成";
-        if (!confirm(`${orderType}請求を${action}しますか？`)) return;
+
+        let confirmMsg = `${orderType}請求を${initialOrder ? "更新" : "作成"}しますか？`;
+        if (orderType === "定時" && isDeadlineWarn) {
+            confirmMsg = "⚠️ 締め切りを過ぎていますが、この払出日で請求しますか？\n（管理者の承認が必要です）";
+        }
+
+        if (!confirm(confirmMsg)) return;
 
         setIsSubmitting(true);
         setMessage("");
@@ -98,7 +142,7 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit }: {
         if (initialOrder) {
             result = await updateOrder(initialOrder.id, items, orderType);
         } else {
-            result = await createOrder(items, orderType);
+            result = await createOrder(items, orderType, scheduledDate);
         }
 
         setIsSubmitting(false);
@@ -150,7 +194,7 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit }: {
                     {/* Order Type Selection */}
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                         <label className="block text-sm font-bold text-slate-700 mb-2">請求種別</label>
-                        <div className="flex space-x-4">
+                        <div className="flex space-x-4 mb-3">
                             <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "臨時" ? "bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
                                 <input
                                     type="radio"
@@ -174,6 +218,42 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit }: {
                                 <span className="ml-2 text-sm font-medium text-slate-700">定期請求</span>
                             </label>
                         </div>
+
+                        {/* Periodic Date Picker */}
+                        {orderType === "定時" && (
+                            <div className="mt-4 animate-in fade-in slide-in-from-top-2">
+                                <label className="block text-xs font-bold text-slate-500 mb-1">
+                                    払出希望日（クール選択）
+                                </label>
+                                <select
+                                    value={scheduledDate}
+                                    onChange={(e) => setScheduledDate(e.target.value)}
+                                    className={`w-full p-2.5 rounded-lg border text-sm font-bold ${isDeadlineWarn ? "border-red-300 bg-red-50 text-red-900 focus:ring-red-500" : "border-slate-300 bg-white focus:ring-green-500"}`}
+                                >
+                                    <option value="">選択してください</option>
+                                    {payoutDates.map((date) => {
+                                        const isPassed = isDeadlinePassed(date, periodicSettings.deadlineDaysBefore);
+                                        const deadlineDate = getDeadline(date, periodicSettings.deadlineDaysBefore);
+                                        return (
+                                            <option key={date.toISOString()} value={date.toISOString()}>
+                                                {formatDate(date)} 払出 (締切: {deadlineDate.getMonth() + 1}/{deadlineDate.getDate()})
+                                                {isPassed ? " [締切過ぎ]" : ""}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                {isDeadlineWarn && (
+                                    <div className="flex items-start gap-2 mt-2 text-xs text-red-600 bg-red-100 p-2 rounded-lg">
+                                        <span>⚠️</span>
+                                        <span>
+                                            <strong>締め切りを過ぎています。</strong><br />
+                                            緊急の定期請求として処理されるか、却下される可能性があります。
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <p className="text-xs text-slate-500 mt-2 ml-1">
                             {orderType === "臨時" ? "※緊急で必要な薬品を個別に請求します。" : "※週に一度の定期配送に合わせて請求します。"}
                         </p>

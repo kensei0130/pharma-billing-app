@@ -49,6 +49,7 @@ export const orders = sqliteTable("orders", {
 
     type: text("type", { enum: ["臨時", "定時", "緊急"] }).default("臨時").notNull(),
     reason: text("reason"), // 請求理由
+    scheduledDate: text("scheduled_date"), // 払出予定日（定時請求用）
 
     status: text("status", { enum: ["承認待ち", "部分承認", "承認済み", "却下"] }).default("承認待ち").notNull(),
 
@@ -57,6 +58,12 @@ export const orders = sqliteTable("orders", {
 
     isCancelled: integer("is_cancelled", { mode: "boolean" }).default(false).notNull(), // 論理削除
     rejectReason: text("reject_reason"), // オーダー全体の却下理由
+});
+
+// システム設定（New）
+export const systemSettings = sqliteTable("system_settings", {
+    key: text("key").primaryKey(), // 'payout_day_of_week' (0-6), 'deadline_days_before' (int)
+    value: text("value").notNull(),
 });
 
 // 請求明細（アイテム）

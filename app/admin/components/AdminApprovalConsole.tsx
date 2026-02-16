@@ -15,7 +15,10 @@ export default function AdminApprovalConsole({
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+
+    // Initialize from URL param 'id' if present, otherwise null (will auto-select)
+    const initialId = searchParams.get("id") ? parseInt(searchParams.get("id")!) : null;
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(initialId);
 
     const currentStatus = searchParams.get("status") ?? "pending";
     const currentType = searchParams.get("type") ?? "臨時";
