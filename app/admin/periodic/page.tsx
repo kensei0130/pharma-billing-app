@@ -13,18 +13,21 @@ export default async function AdminPeriodicPage({
     const session = await auth();
 
     // 1. Determine Date Filter
-    // Defaults: "Next Upcoming" context usually implies seeing future ones and maybe immediate past.
-    // Let's rely on actions default if null, or set explicitly.
-    // User asked: "Filter default is next upcoming payout cool" -> Does this mean the list is filtered to only that? 
-    // Or the SELECTION is that?
-    // "Filter de period shitei dekiru to yoi" -> Range filter.
-    // Let's set default list range to show recent past + future.
+    // Calculate defaults first to ensure consistency between Data Fetch and UI
+    const now = new Date();
+    const defaultStart = new Date().toISOString().split('T')[0]; // Default: Today
 
-    // If no params, we use defaults in getPeriodicCycles (1 month ago to 3 months future)
-    // But to allow user to see what filter is applied, we should probably generate them here if not present?
-    // Let's let the action handle defaults for now and pass undefined.
+    // Default: Today + 7 days
+    const nextWeek = new Date(now);
+    nextWeek.setDate(now.getDate() + 7);
+    const defaultEnd = nextWeek.toISOString().split('T')[0];
 
-    const cycles = await getPeriodicCycles(params.startDate, params.endDate);
+    // Use params if present, otherwise use defaults
+    const filterStart = params.startDate || defaultStart;
+    const filterEnd = params.endDate || defaultEnd;
+
+    // Fetch cycles with consistent filter
+    const cycles = await getPeriodicCycles(filterStart, filterEnd);
 
     // 2. Determine Selected Date
     // If param.date exists, use it.
@@ -45,17 +48,6 @@ export default async function AdminPeriodicPage({
     // 3. Fetch Selected Orders
     const selectedOrders = selectedDate ? await getPeriodicOrdersByDate(selectedDate) : null;
 
-    // Get filter values for UI input display (if undefined, default logic is hidden in action, let's expose or just leave empty)
-    // If we want controlled inputs, we should pass values.
-    const now = new Date();
-    // Replicating default logic for UI display if needed, or pass undefined to let Client use its logic?
-    // Client Component uses state `useState(filterStart)`.
-    const defaultStart = new Date().toISOString().split('T')[0]; // Default: Today
-    // Default: Today + 7 days
-    const nextWeek = new Date(now);
-    nextWeek.setDate(now.getDate() + 7);
-    const defaultEnd = nextWeek.toISOString().split('T')[0];
-
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -69,8 +61,8 @@ export default async function AdminPeriodicPage({
                 cycles={cycles}
                 selectedOrders={selectedOrders}
                 selectedDate={selectedDate}
-                filterStart={params.startDate || defaultStart}
-                filterEnd={params.endDate || defaultEnd}
+                filterStart={filterStart}
+                filterEnd={filterEnd}
             />
         </div>
     );
