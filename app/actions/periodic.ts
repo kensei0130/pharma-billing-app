@@ -79,11 +79,14 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
             const cycle = cyclesMap.get(record.scheduledDate)!;
             cycle.orderCount = count;
         } else {
+            // User requested that existing orders be treated as "Accepted" (active) rather than past
+            // Or simple logic: if it has orders, it's effectively an active record until closed/archived?
+            // "過去の請求ではなく、受付中としてください"
             cyclesMap.set(record.scheduledDate, {
                 date: record.scheduledDate,
                 isUpcoming: new Date(record.scheduledDate) >= new Date(),
                 orderCount: count,
-                status: "過去の請求"
+                status: "受付中" // Always show as Accepting if it was found in orders within range
             });
         }
     }

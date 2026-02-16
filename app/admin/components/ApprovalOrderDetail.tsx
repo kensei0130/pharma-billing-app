@@ -15,7 +15,8 @@ type OrderItem = {
 
 type Order = {
     id: number;
-    wardName: string;
+    wardName?: string; // Optonal to support ward.name
+    ward?: { name: string }; // Support nested
     orderDate: string;
     type: string;
     status: string;
@@ -30,6 +31,9 @@ type ApprovalOrderDetailProps = {
 
 export default function ApprovalOrderDetail({ order, onUpdate }: ApprovalOrderDetailProps) {
     const [isPending, startTransition] = useTransition();
+
+    // Normalize ward name
+    const wardName = order.wardName || order.ward?.name || "不明な病棟";
 
     const handleApprove = async (itemId: number, currentQty: number) => {
         startTransition(async () => {
@@ -63,14 +67,14 @@ export default function ApprovalOrderDetail({ order, onUpdate }: ApprovalOrderDe
             <div className="px-6 py-5 border-b border-slate-100 bg-white flex justify-between items-start shrink-0">
                 <div className="flex items-start gap-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold shadow-sm ${order.type === "緊急" ? "bg-red-50 text-red-600 border border-red-100" :
-                            order.type === "定時" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                                "bg-indigo-50 text-indigo-600 border border-indigo-100"
+                        order.type === "定時" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                            "bg-indigo-50 text-indigo-600 border border-indigo-100"
                         }`}>
-                        {order.wardName.charAt(0)}
+                        {wardName.charAt(0)}
                     </div>
                     <div>
                         <div className="flex items-center gap-3 mb-1">
-                            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{order.wardName}</h2>
+                            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{wardName}</h2>
                             <span className={`px-2.5 py-0.5 text-xs rounded-full font-bold border ${order.type === '緊急' ? 'bg-red-100 text-red-700 border-red-200' : order.type === '定時' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-indigo-100 text-indigo-700 border-indigo-200'}`}>
                                 {order.type}請求
                             </span>
