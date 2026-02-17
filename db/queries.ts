@@ -193,6 +193,7 @@ export async function getOrderItems(orderId: number) {
             quantity: orderItems.quantity,
             approvedQuantity: orderItems.approvedQuantity,
             status: orderItems.status,
+            comment: orderItems.comment,
         })
         .from(orderItems)
         .innerJoin(drugs, eq(orderItems.drugId, drugs.id))

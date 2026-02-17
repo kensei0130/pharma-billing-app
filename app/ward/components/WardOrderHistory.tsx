@@ -13,6 +13,7 @@ type Order = {
     items?: {
         drug: { name: string };
         quantity: number;
+        comment?: string | null;
     }[];
 };
 
@@ -120,6 +121,16 @@ export default function WardOrderHistory({ orders, onEdit }: { orders: Order[], 
                                         <span className="font-medium">{order.items[0].drug.name}</span>
                                         {order.items.length > 1 && (
                                             <span className="text-slate-400 ml-1 text-xs"> 他{order.items.length - 1}剤</span>
+                                        )}
+                                        {/* Show comment indicator if any item has a comment */}
+                                        {order.items.some(i => i.comment) && (
+                                            <div className="mt-1 flex items-start gap-1">
+                                                <span className="text-xs text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-200 flex items-center">
+                                                    <span className="mr-1">📝</span>
+                                                    {order.items.find(i => i.comment)?.comment}
+                                                    {order.items.filter(i => i.comment).length > 1 && "..."}
+                                                </span>
+                                            </div>
                                         )}
                                     </>
                                 ) : (

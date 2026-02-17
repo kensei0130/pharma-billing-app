@@ -12,14 +12,16 @@ import { getNextPayoutDate, toLocalISOString, getDeadline, getPreviousPayoutDate
 type CartItem = {
     drugId: number;
     quantity: number;
+    comment?: string;
 };
 
 export async function createOrder(
     items: CartItem[],
-    orderType: "臨時" | "定時" = "臨時",
+    orderType: "臨時" | "定時" | "返却" = "臨時",
     scheduledDate?: string,
     periodicEventId?: number,
-    isException: boolean = false
+    isException: boolean = false,
+    reason?: string // Added reason parameter
 ) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -94,7 +96,7 @@ export async function createOrder(
             wardId: session.user.id,
             type: orderType,
             status: "承認待ち",
-            reason: isException ? "期限切れ例外請求" : "アプリからの請求", // Mark reason for exception
+            reason: reason || (isException ? "期限切れ例外請求" : null), // Only use default for exception
             requestId: requestId,
             orderDate: now.toISOString(),
             scheduledDate: finalScheduledDate || null, // Periodic date
@@ -111,6 +113,7 @@ export async function createOrder(
                 status: "承認待ち",
                 approvedQuantity: 0,
                 rejectedQuantity: 0,
+                comment: item.comment || null,
             });
         }
 
@@ -199,7 +202,7 @@ export async function getMonitorOrders() {
         const typeConditions = [];
 
         if (selectedTypes.includes("periodic")) typeConditions.push(eq(orders.type, "定時"));
-        if (selectedTypes.includes("urgent")) typeConditions.push(eq(orders.type, "緊急"));
+        if (selectedTypes.includes("urgent")) typeConditions.push(eq(orders.type, "返却"));
         if (selectedTypes.includes("temporary")) typeConditions.push(eq(orders.type, "臨時"));
 
         if (typeConditions.length > 0) {
@@ -298,7 +301,7 @@ export async function getMonitorOrders() {
     return { unapproved: unapprovedOrders, approved: approvedOrders };
 }
 
-export async function updateOrder(orderId: number, items: CartItem[], orderType: "臨時" | "定時", scheduledDate?: string) {
+export async function updateOrder(orderId: number, items: CartItem[], orderType: "臨時" | "定時" | "返却", scheduledDate?: string) {
     const session = await auth();
     if (!session?.user?.id) {
         return { success: false, message: "認証されていません" };
@@ -333,6 +336,7 @@ export async function updateOrder(orderId: number, items: CartItem[], orderType:
                 status: "承認待ち",
                 approvedQuantity: 0,
                 rejectedQuantity: 0,
+                comment: item.comment || null,
             });
         }
 

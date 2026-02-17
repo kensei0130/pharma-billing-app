@@ -16,6 +16,7 @@ export async function addDrug(formData: FormData) {
     const furigana = formData.get("furigana") as string;
     const unit = formData.get("unit") as string;
     const category = formData.get("category") as string;
+    const allowComment = formData.get("allowComment") === "on";
 
     if (!name || !unit) {
         return { success: false, message: "薬品名と単位は必須です" };
@@ -27,6 +28,7 @@ export async function addDrug(formData: FormData) {
             furigana,
             unit,
             category,
+            allowComment,
             isInactive: false,
         });
 
@@ -48,10 +50,11 @@ export async function updateDrug(id: number, formData: FormData) {
     const furigana = formData.get("furigana") as string;
     const unit = formData.get("unit") as string;
     const category = formData.get("category") as string;
+    const allowComment = formData.get("allowComment") === "on";
 
     try {
         await db.update(drugs)
-            .set({ name, furigana, unit, category })
+            .set({ name, furigana, unit, category, allowComment })
             .where(eq(drugs.id, id));
 
         revalidatePath("/admin/drugs");

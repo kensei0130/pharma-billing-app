@@ -10,11 +10,12 @@ type Drug = {
     unit: string;
     category: string | null;
     furigana: string | null;
+    allowComment: boolean;
 };
 
 type EditingOrder = {
     id: number;
-    type: "臨時" | "定時";
+    type: "臨時" | "定時" | "返却";
     items: { drugId: number; quantity: number }[];
 };
 
@@ -24,7 +25,7 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
     onCancelEdit?: () => void,
     periodicSettings: { payoutDayOfWeek: number; deadlineDaysBefore: number }
 }) {
-    const [cart, setCart] = useState<{ drugId: number; name: string; quantity: number; unit: string }[]>([]);
+    const [cart, setCart] = useState<{ drugId: number; name: string; quantity: number; unit: string; comment: string; allowComment: boolean }[]>([]);
 
     // Selection State
     const [drugSearchQuery, setDrugSearchQuery] = useState("");
@@ -32,7 +33,9 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState("");
-    const [orderType, setOrderType] = useState<"臨時" | "定時">("臨時");
+    const [orderType, setOrderType] = useState<"臨時" | "定時" | "返却">("臨時");
+
+    const [orderComment, setOrderComment] = useState("");
 
     // Automatic Cycle Calculation
     const [targetDateInfo, setTargetDateInfo] = useState<{ payout: Date, deadline: Date } | null>(null);
@@ -80,7 +83,9 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                     drugId: item.drugId,
                     name: drug?.name || "Unknown",
                     quantity: item.quantity,
-                    unit: drug?.unit || ""
+                    unit: drug?.unit || "",
+                    comment: "", // Initial edit might lack comment if not fetched, but we don't have it in EditingOrder yet. Logic warning.
+                    allowComment: drug?.allowComment || false
                 };
             });
             setCart(initialCart);
@@ -89,6 +94,7 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
             // Reset if no initial order (switched back to create mode)
             setCart([]);
             setOrderType("臨時");
+            setOrderComment("");
             setMessage("");
         }
     }, [initialOrder, drugs]);
@@ -99,7 +105,7 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
             return;
         }
 
-        setCart([...cart, { drugId: drug.id, name: drug.name, quantity: 1, unit: drug.unit }]);
+        setCart([...cart, { drugId: drug.id, name: drug.name, quantity: 1, unit: drug.unit, comment: "", allowComment: drug.allowComment }]);
         setDrugSearchQuery(""); // Clear search to allow next search
         setMessage("");
     };
@@ -136,23 +142,26 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
         setMessage("");
 
         let result;
-        const items = cart.map((item) => ({ drugId: item.drugId, quantity: item.quantity }));
+        const items = cart.map((item) => ({ drugId: item.drugId, quantity: item.quantity, comment: item.comment }));
 
         if (initialOrder) {
             result = await updateOrder(initialOrder.id, items, orderType);
         } else {
-            // createOrder updated signature: (items, type, scheduledDate?, periodicEventId?)
+            // createOrder updated signature: (items, type, scheduledDate?, periodicEventId?, isException?, reason?)
             // We do NOT pass periodicEventId anymore, logic is handled on server.
             // Passing scheduledDate as string for logging/display if needed, but server overrides.
             // Let's passed undefined for ID.
             const scheduledDateStr = (orderType === "定時" && targetDateInfo) ? toLocalISOString(targetDateInfo.payout) : undefined;
 
-            result = await createOrder(items, orderType, scheduledDateStr, undefined, isException);
+            result = await createOrder(items, orderType, scheduledDateStr, undefined, isException, orderComment);
         }
 
         setIsSubmitting(false);
         if (result.success) {
-            if (!initialOrder) setCart([]); // Clear cart only if creating new
+            if (!initialOrder) {
+                setCart([]); // Clear cart only if creating new
+                setOrderComment("");
+            }
             setMessage("✅ " + result.message);
             if (initialOrder && onCancelEdit) {
                 setTimeout(() => {
@@ -200,27 +209,38 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                         <label className="block text-sm font-bold text-slate-700 mb-2">請求種別</label>
                         <div className="flex space-x-4 mb-3">
-                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "臨時" ? "bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
+                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "臨時" ? "bg-green-50 border-green-500 ring-1 ring-green-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
                                 <input
                                     type="radio"
                                     name="orderType"
                                     value="臨時"
                                     checked={orderType === "臨時"}
                                     onChange={() => setOrderType("臨時")}
-                                    className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                    className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
                                 />
                                 <span className="ml-2 text-sm font-medium text-slate-700">臨時請求</span>
                             </label>
-                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "定時" ? "bg-green-50 border-green-500 ring-1 ring-green-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
+                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "定時" ? "bg-blue-50 border-blue-500 ring-1 ring-blue-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
                                 <input
                                     type="radio"
                                     name="orderType"
                                     value="定時"
                                     checked={orderType === "定時"}
                                     onChange={() => setOrderType("定時")}
-                                    className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+                                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                                 />
                                 <span className="ml-2 text-sm font-medium text-slate-700">定期請求</span>
+                            </label>
+                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "返却" ? "bg-red-50 border-red-500 ring-1 ring-red-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
+                                <input
+                                    type="radio"
+                                    name="orderType"
+                                    value="返却"
+                                    checked={orderType === "返却"}
+                                    onChange={() => setOrderType("返却")}
+                                    className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                                />
+                                <span className="ml-2 text-sm font-medium text-slate-700">返却請求</span>
                             </label>
                         </div>
 
@@ -402,28 +422,46 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                             )}
                         </div>
 
-                        <button
-                            onClick={handleSubmit}
-                            disabled={cart.length === 0 || isSubmitting}
-                            className={`w-full min-[1200px]:w-auto px-8 btn-primary py-3 text-base font-bold flex items-center justify-center shadow-lg transition-all transform hover:-translate-y-1 active:translate-y-0 ${initialOrder
-                                ? "bg-orange-500 hover:bg-orange-600 shadow-orange-500/30"
-                                : orderType === "臨時"
-                                    ? "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30"
-                                    : "bg-green-600 hover:bg-green-700 shadow-green-500/30"
-                                } disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none`}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
-                                    送信中...
-                                </>
-                            ) : (
-                                <>
-                                    {initialOrder ? "更新を保存" : `請求を確定 (${orderType})`}
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                </>
-                            )}
-                        </button>
+                        {/* Order Remarks & Checksum */}
+                        {/* Remarks Input */}
+                        <div className="w-full mb-2 flex items-start gap-4">
+                            <div className="flex-1">
+                                <label className="block text-xs font-bold text-slate-500 mb-1">備考 (任意) <span className="font-normal text-slate-400">※請求者など</span></label>
+                                <textarea
+                                    value={orderComment}
+                                    onChange={(e) => setOrderComment(e.target.value)}
+                                    placeholder="請求に関する備考があれば入力してください"
+                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-[52px] resize-none placeholder-slate-400"
+                                />
+                            </div>
+
+                            <div className="flex-1 pt-6"> {/* Align with textarea based on label height */}
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={cart.length === 0 || isSubmitting}
+                                    className={`w-full py-3 text-base font-bold flex items-center justify-center rounded-xl shadow-lg transition-all transform hover:-translate-y-1 active:translate-y-0 ${initialOrder
+                                        ? "bg-orange-500 hover:bg-orange-600 shadow-orange-500/30 text-white"
+                                        : orderType === "臨時"
+                                            ? "bg-green-600 hover:bg-green-700 shadow-green-500/30 text-white"
+                                            : orderType === "返却"
+                                                ? "bg-red-600 hover:bg-red-700 shadow-red-500/30 text-white"
+                                                : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/30 text-white"
+                                        } disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none`}
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+                                            送信中...
+                                        </>
+                                    ) : (
+                                        <>
+                                            {initialOrder ? "更新を保存" : `請求を確定 (${orderType})`}
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex-1">
@@ -456,6 +494,19 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                                                     />
                                                     <span className="text-sm text-slate-500 font-mono">{item.unit}</span>
                                                 </div>
+                                                {item.allowComment && (
+                                                    <div className="mt-2 text-xs">
+                                                        <input
+                                                            type="text"
+                                                            placeholder=""
+                                                            value={item.comment || ""}
+                                                            onChange={(e) => {
+                                                                setCart(cart.map(c => c.drugId === item.drugId ? { ...c, comment: e.target.value } : c));
+                                                            }}
+                                                            className="w-full text-xs border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-indigo-500 outline-none bg-yellow-50 focus:bg-white transition-colors placeholder-slate-400"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                             <button
                                                 onClick={() => handleRemove(item.drugId)}
@@ -474,6 +525,6 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                     {/* Moved to top */}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

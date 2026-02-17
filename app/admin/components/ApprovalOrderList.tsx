@@ -34,14 +34,14 @@ export default function ApprovalOrderList({
                 // Type Color Logic (Only for Badge now)
                 let typeColor = "bg-slate-100 text-slate-600";
 
-                if (order.type === "緊急") {
-                    typeColor = "bg-rose-50 text-rose-700 border-rose-200 font-bold animate-pulse-slow";
+                if (order.type === "返却") {
+                    typeColor = "bg-red-50 text-red-700 border-red-200 font-bold";
                 }
                 else if (order.type === "定時") {
                     typeColor = "bg-blue-50 text-blue-700 border-blue-200";
                 }
                 else if (order.type === "臨時") {
-                    typeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                    typeColor = "bg-green-50 text-green-700 border-green-200";
                 }
 
                 return (

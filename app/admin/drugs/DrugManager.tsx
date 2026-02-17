@@ -9,12 +9,25 @@ type Drug = {
     unit: string;
     category: string | null;
     furigana: string | null;
+    allowComment: boolean | null;
     isInactive: boolean | null;
 };
 
 export default function DrugManager({ initialDrugs }: { initialDrugs: Drug[] }) {
     const [selectedDrug, setSelectedDrug] = useState<Drug | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+
+    // Sync selectedDrug with initialDrugs when initialDrugs updates (e.g. after server action)
+    const [prevInitialDrugs, setPrevInitialDrugs] = useState(initialDrugs);
+    if (initialDrugs !== prevInitialDrugs) {
+        setPrevInitialDrugs(initialDrugs);
+        if (selectedDrug) {
+            const updated = initialDrugs.find(d => d.id === selectedDrug.id);
+            if (updated) {
+                setSelectedDrug(updated);
+            }
+        }
+    }
 
     // Filter drugs based on search term
     const filteredDrugs = initialDrugs.filter(drug =>
@@ -204,14 +217,29 @@ export default function DrugManager({ initialDrugs }: { initialDrugs: Drug[] }) 
                                         </div>
                                     </div>
                                 </div>
+
+                                <div className="col-span-2">
+                                    <label className="flex items-center space-x-3 p-3 border border-slate-200 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            name="allowComment"
+                                            defaultChecked={selectedDrug?.allowComment || false}
+                                            className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                                        />
+                                        <div>
+                                            <span className="text-sm font-bold text-slate-700 block">コメント入力を許可する</span>
+                                            <span className="text-xs text-slate-500 block mt-0.5">※「未登録薬」や「その他」など、詳細な記載が必要な場合に有効にしてください。</span>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="pt-6 border-t border-slate-100 flex items-center gap-4">
                                 <button
                                     type="submit"
                                     className={`flex-1 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${selectedDrug
-                                            ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 shadow-indigo-200"
-                                            : "bg-green-600 hover:bg-green-700 focus:ring-green-500 shadow-green-200"
+                                        ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 shadow-indigo-200"
+                                        : "bg-green-600 hover:bg-green-700 focus:ring-green-500 shadow-green-200"
                                         }`}
                                 >
                                     {selectedDrug ? "変更を保存する" : "新規登録する"}

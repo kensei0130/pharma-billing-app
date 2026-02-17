@@ -21,7 +21,7 @@ export default function MonitorSettingsForm({
     const typeOptions = [
         { value: "all", label: "すべて" },
         { value: "periodic", label: "定期請求" },
-        { value: "urgent", label: "緊急請求" },
+        { value: "urgent", label: "返却請求" },
         { value: "temporary", label: "臨時請求" },
     ];
 

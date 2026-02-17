@@ -11,6 +11,7 @@ type Drug = {
     unit: string;
     category: string | null;
     furigana: string | null;
+    allowComment: boolean;
 };
 
 type ConstantDrug = {

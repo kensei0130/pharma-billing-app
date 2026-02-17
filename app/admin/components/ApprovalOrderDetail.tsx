@@ -11,6 +11,7 @@ type OrderItem = {
     quantity: number;
     approvedQuantity: number;
     status: string;
+    comment: string | null;
 };
 
 type Order = {
@@ -66,16 +67,16 @@ export default function ApprovalOrderDetail({ order, onUpdate }: ApprovalOrderDe
             {/* Header Area */}
             <div className="px-6 py-5 border-b border-slate-100 bg-white flex justify-between items-start shrink-0">
                 <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold shadow-sm ${order.type === "緊急" ? "bg-red-50 text-red-600 border border-red-100" :
-                        order.type === "定時" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                            "bg-indigo-50 text-indigo-600 border border-indigo-100"
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold shadow-sm ${order.type === "返却" ? "bg-red-50 text-red-600 border border-red-100" :
+                        order.type === "定時" ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                            "bg-green-50 text-green-600 border border-green-100"
                         }`}>
                         {wardName.charAt(0)}
                     </div>
                     <div>
                         <div className="flex items-center gap-3 mb-1">
                             <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{wardName}</h2>
-                            <span className={`px-2.5 py-0.5 text-xs rounded-full font-bold border ${order.type === '緊急' ? 'bg-red-100 text-red-700 border-red-200' : order.type === '定時' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-indigo-100 text-indigo-700 border-indigo-200'}`}>
+                            <span className={`px-2.5 py-0.5 text-xs rounded-full font-bold border ${order.type === '返却' ? 'bg-red-100 text-red-700 border-red-200' : order.type === '定時' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-green-100 text-green-700 border-green-200'}`}>
                                 {order.type}請求
                             </span>
                         </div>
@@ -96,7 +97,18 @@ export default function ApprovalOrderDetail({ order, onUpdate }: ApprovalOrderDe
                     </div>
                 </div>
 
-                {/* Applicant Comment Removed */}
+                {/* Applicant Comment (Remarks) */}
+                {order.reason && (
+                    <div className="mt-4 px-4 py-3 bg-yellow-50 border border-yellow-100 rounded-lg mx-6 mb-4">
+                        <div className="flex items-start gap-2">
+                            <span className="text-lg">📝</span>
+                            <div>
+                                <span className="text-xs font-bold text-yellow-700 block mb-0.5">備考</span>
+                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{order.reason}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Main Content (Table) */}
@@ -129,6 +141,12 @@ export default function ApprovalOrderDetail({ order, onUpdate }: ApprovalOrderDe
                                                 {isRejected && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">却下</span>}
                                                 <span className="text-xs text-slate-400 font-mono bg-slate-100 px-1.5 rounded">{item.drugUnit}</span>
                                             </div>
+                                            {item.comment && (
+                                                <div className="mt-2 text-xs text-slate-600 bg-yellow-50 border border-yellow-100 p-2 rounded flex items-start gap-1">
+                                                    <span className="text-yellow-500">📝</span>
+                                                    <span>{item.comment}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
 

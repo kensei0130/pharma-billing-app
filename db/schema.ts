@@ -8,6 +8,7 @@ export const drugs = sqliteTable("drugs", {
     furigana: text("furigana"), // 検索用
     category: text("category"), // 分類
     unit: text("unit").notNull(), // 単位 (錠, 本, ml)
+    allowComment: integer("allow_comment", { mode: "boolean" }).default(false), // コメント入力許可
     isInactive: integer("is_inactive", { mode: "boolean" }).default(false).notNull(), // 論理削除用
 });
 
@@ -47,7 +48,7 @@ export const orders = sqliteTable("orders", {
     orderDate: text("order_date").default(sql`CURRENT_TIMESTAMP`).notNull(),
     weekStart: text("week_start"), // 定時請求の対象週開始日
 
-    type: text("type", { enum: ["臨時", "定時", "緊急"] }).default("臨時").notNull(),
+    type: text("type", { enum: ["臨時", "定時", "返却"] }).default("臨時").notNull(),
     reason: text("reason"), // 請求理由
     scheduledDate: text("scheduled_date"), // 払出予定日（定時請求用） -> Deprecated/Cache
     periodicEventId: integer("periodic_event_id").references(() => periodicEvents.id), // New FK
