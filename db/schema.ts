@@ -49,7 +49,8 @@ export const orders = sqliteTable("orders", {
 
     type: text("type", { enum: ["臨時", "定時", "緊急"] }).default("臨時").notNull(),
     reason: text("reason"), // 請求理由
-    scheduledDate: text("scheduled_date"), // 払出予定日（定時請求用）
+    scheduledDate: text("scheduled_date"), // 払出予定日（定時請求用） -> Deprecated/Cache
+    periodicEventId: integer("periodic_event_id").references(() => periodicEvents.id), // New FK
 
     status: text("status", { enum: ["承認待ち", "部分承認", "承認済み", "却下"] }).default("承認待ち").notNull(),
 
@@ -97,6 +98,15 @@ export const approvalHistory = sqliteTable("approval_history", {
     timestamp: text("timestamp").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
+// 定期請求イベントマスタ (New)
+export const periodicEvents = sqliteTable("periodic_events", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    payoutDate: text("payout_date").notNull(), // YYYY-MM-DD
+    deadline: text("deadline").notNull(), // ISO String
+    status: text("status", { enum: ["draft", "open", "closed", "completed"] }).default("draft").notNull(),
+    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
 // お知らせマスタ
 export const announcements = sqliteTable("announcements", {
     id: integer("id").primaryKey({ autoIncrement: true }),
@@ -111,10 +121,18 @@ export const announcements = sqliteTable("announcements", {
 // Relations
 import { relations } from "drizzle-orm";
 
+export const periodicEventsRelations = relations(periodicEvents, ({ many }) => ({
+    orders: many(orders),
+}));
+
 export const ordersRelations = relations(orders, ({ one, many }) => ({
     ward: one(wards, {
         fields: [orders.wardId],
         references: [wards.id],
+    }),
+    periodicEvent: one(periodicEvents, {
+        fields: [orders.periodicEventId],
+        references: [periodicEvents.id],
     }),
     items: many(orderItems),
 }));

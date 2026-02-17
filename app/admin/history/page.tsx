@@ -18,7 +18,6 @@ export default async function HistoryPage() {
                     </div>
                     <div>
                         <h2 className="text-3xl font-bold text-slate-800 tracking-tight">請求履歴</h2>
-                        <p className="text-slate-500 font-medium">過去の承認・却下済み請求データの照会と出力</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">

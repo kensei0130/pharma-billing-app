@@ -84,7 +84,7 @@ export default function ConstantRequestForm({ constantDrugs }: { constantDrugs: 
     }
 
     return (
-        <div className="p-6 md:p-8 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+        <div className="p-6 min-[1200px]:p-8 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center">
                     <span className="bg-green-100 text-green-600 p-2 rounded-lg mr-3 text-lg">📦</span>
@@ -93,10 +93,10 @@ export default function ConstantRequestForm({ constantDrugs }: { constantDrugs: 
             </div>
 
             {/* 2-Column Layout */}
-            <div className="flex flex-col xl:flex-row gap-8 items-start">
+            <div className="flex flex-col min-[1200px]:flex-row gap-8 items-start">
 
                 {/* LEFT COLUMN: Controls & Selection */}
-                <div className="w-full xl:w-1/3 space-y-6">
+                <div className="w-full min-[1200px]:w-1/3 space-y-6">
                     {/* Order Type Selection */}
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                         <label className="block text-sm font-bold text-slate-700 mb-2">請求種別</label>
@@ -152,7 +152,7 @@ export default function ConstantRequestForm({ constantDrugs }: { constantDrugs: 
                 </div>
 
                 {/* RIGHT COLUMN: Set Details & Actions */}
-                <div className="w-full xl:w-2/3 flex flex-col h-full">
+                <div className="w-full min-[1200px]:w-2/3 flex flex-col h-full">
                     {/* Header & Actions */}
                     <div className="flex flex-col gap-4 mb-4">
                         <div className="flex items-center justify-between">

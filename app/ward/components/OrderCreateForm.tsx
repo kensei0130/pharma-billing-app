@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createOrder, updateOrder } from "@/app/actions/orders";
-import { getNextPayoutDates, formatDate, isDeadlinePassed, getDeadline, toLocalISOString } from "@/lib/date-utils";
+import { getNextPayoutDates, getNextPayoutDate, formatDate, isDeadlinePassed, getDeadline, toLocalISOString, getPreviousPayoutDate } from "@/lib/date-utils";
 
 type Drug = {
     id: number;
@@ -34,41 +34,40 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
     const [message, setMessage] = useState("");
     const [orderType, setOrderType] = useState<"臨時" | "定時">("臨時");
 
-    // Periodic Billing State
-    const [scheduledDate, setScheduledDate] = useState<string>("");
-    const [payoutDates, setPayoutDates] = useState<Date[]>([]);
-    const [isDeadlineWarn, setIsDeadlineWarn] = useState(false);
+    // Automatic Cycle Calculation
+    const [targetDateInfo, setTargetDateInfo] = useState<{ payout: Date, deadline: Date } | null>(null);
+    const [isException, setIsException] = useState(false);
 
-    // Initialize Periodic Date Options
     useEffect(() => {
         if (orderType === "定時") {
-            const nextDates = getNextPayoutDates(new Date(), periodicSettings.payoutDayOfWeek, 5);
-            setPayoutDates(nextDates);
+            const now = new Date();
+            // If exception, we want the previous payout date.
+            // But we might need to rely on the checkbox state to calculate the displayed date?
+            // Actually, the UI logic showed "Automatically assigned".
+            // If I check "Exception", the displayed date should change to the previous one?
+            // YES.
 
-            // Auto Select Nearest Valid Date if not set
-            if (!scheduledDate) {
-                const validDate = nextDates.find(d => !isDeadlinePassed(d, periodicSettings.deadlineDaysBefore));
-                if (validDate) {
-                    setScheduledDate(toLocalISOString(validDate));
-                } else if (nextDates.length > 0) {
-                    // All passed? Just select first next.
-                    setScheduledDate(toLocalISOString(nextDates[0]));
-                }
-            }
-        }
-    }, [orderType, periodicSettings, scheduledDate]);
-
-    // Check Deadline on Selection Change
-    useEffect(() => {
-        if (orderType === "定時" && scheduledDate) {
-            const date = new Date(scheduledDate);
-            if (isDeadlinePassed(date, periodicSettings.deadlineDaysBefore)) {
-                setIsDeadlineWarn(true);
+            // Let's calculate both potential dates or just based on isException.
+            let payout: Date;
+            if (isException) {
+                payout = getPreviousPayoutDate(now, periodicSettings.payoutDayOfWeek, periodicSettings.deadlineDaysBefore);
             } else {
-                setIsDeadlineWarn(false);
+                payout = getNextPayoutDate(now, periodicSettings.payoutDayOfWeek, periodicSettings.deadlineDaysBefore);
             }
+
+            const deadline = getDeadline(payout, periodicSettings.deadlineDaysBefore);
+            setTargetDateInfo({ payout, deadline });
+        } else {
+            setTargetDateInfo(null);
+            setIsException(false);
         }
-    }, [scheduledDate, orderType, periodicSettings]);
+    }, [orderType, periodicSettings, isException]);
+
+    const isDeadlineWarn = targetDateInfo ? isDeadlinePassed(targetDateInfo.payout, periodicSettings.deadlineDaysBefore) : false;
+
+
+    // remove old useEffect dependent on scheduledDate
+
 
 
     // Initialize from props
@@ -142,7 +141,13 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
         if (initialOrder) {
             result = await updateOrder(initialOrder.id, items, orderType);
         } else {
-            result = await createOrder(items, orderType, scheduledDate);
+            // createOrder updated signature: (items, type, scheduledDate?, periodicEventId?)
+            // We do NOT pass periodicEventId anymore, logic is handled on server.
+            // Passing scheduledDate as string for logging/display if needed, but server overrides.
+            // Let's passed undefined for ID.
+            const scheduledDateStr = (orderType === "定時" && targetDateInfo) ? toLocalISOString(targetDateInfo.payout) : undefined;
+
+            result = await createOrder(items, orderType, scheduledDateStr, undefined, isException);
         }
 
         setIsSubmitting(false);
@@ -160,7 +165,7 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
     };
 
     return (
-        <div className={`rich-card p-6 md:p-8 ${initialOrder ? "border-2 border-indigo-200 shadow-indigo-100" : ""}`}>
+        <div className={`rich-card p-6 min-[1200px]:p-8 ${initialOrder ? "border-2 border-indigo-200 shadow-indigo-100" : ""}`}>
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center">
                     <span className={`p-2 rounded-lg mr-3 text-lg ${initialOrder ? "bg-orange-100 text-orange-600" : "bg-indigo-100 text-indigo-600"}`}>
@@ -186,10 +191,10 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
             </div>
 
             {/* 2-Column Layout */}
-            <div className="flex flex-col xl:flex-row gap-8 items-start">
+            <div className="flex flex-col min-[1200px]:flex-row gap-8 items-start">
 
                 {/* LEFT COLUMN: Controls & Selection */}
-                <div className="w-full xl:w-1/2 space-y-6">
+                <div className="w-full min-[1200px]:w-1/2 space-y-6">
 
                     {/* Order Type Selection */}
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
@@ -219,39 +224,59 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                             </label>
                         </div>
 
-                        {/* Periodic Date Picker */}
-                        {orderType === "定時" && (
-                            <div className="mt-4 animate-in fade-in slide-in-from-top-2">
-                                <label className="block text-xs font-bold text-slate-500 mb-1">
-                                    払出希望日（クール選択）
-                                </label>
-                                <select
-                                    value={scheduledDate}
-                                    onChange={(e) => setScheduledDate(e.target.value)}
-                                    className={`w-full p-2.5 rounded-lg border text-sm font-bold ${isDeadlineWarn ? "border-red-300 bg-red-50 text-red-900 focus:ring-red-500" : "border-slate-300 bg-white focus:ring-green-500"}`}
-                                >
-                                    <option value="">選択してください</option>
-                                    {payoutDates.map((date) => {
-                                        const isPassed = isDeadlinePassed(date, periodicSettings.deadlineDaysBefore);
-                                        const deadlineDate = getDeadline(date, periodicSettings.deadlineDaysBefore);
-                                        const dateVal = toLocalISOString(date);
-                                        return (
-                                            <option key={dateVal} value={dateVal}>
-                                                {formatDate(date)} 払出 (締切: {deadlineDate.getMonth() + 1}/{deadlineDate.getDate()})
-                                                {isPassed ? " [締切過ぎ]" : ""}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-                                {isDeadlineWarn && (
-                                    <div className="flex items-start gap-2 mt-2 text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                                        <span>⚠️</span>
-                                        <span>
-                                            <strong>締め切りを過ぎています。</strong><br />
-                                            緊急の定期請求として処理されるか、却下される可能性があります。
+                        {/* Automatic Payout Date Display */}
+                        {orderType === "定時" && targetDateInfo && (
+                            <div className={`mt-4 p-4 border rounded-lg animate-in fade-in transition-colors ${isDeadlineWarn && !isException
+                                ? "bg-red-50 border-red-200"
+                                : "bg-indigo-50 border-indigo-200"
+                                }`}>
+                                <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isDeadlineWarn && !isException ? "text-red-800" : "text-indigo-800"
+                                    }`}>
+                                    請求対象の払出日 (自動判定)
+                                </h4>
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white px-3 py-2 rounded border border-indigo-100 shadow-sm">
+                                        <span className={`text-xl font-bold ${isDeadlineWarn && !isException ? "text-red-700" : "text-indigo-700"
+                                            }`}>
+                                            {formatDate(targetDateInfo.payout)}
                                         </span>
                                     </div>
-                                )}
+                                    <div className={`text-xs ${isDeadlineWarn && !isException ? "text-red-600 font-bold" : "text-indigo-600"
+                                        }`}>
+                                        <p>締切: {targetDateInfo.deadline.getMonth() + 1}/{targetDateInfo.deadline.getDate()} {targetDateInfo.deadline.getHours()}:59</p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-3 bg-white p-3 rounded border border-slate-100">
+                                    {isDeadlineWarn && !isException && (
+                                        <p className="text-xs text-red-600 font-bold flex items-center mb-2">
+                                            ⚠️ 直近の締め切りを過ぎています
+                                        </p>
+                                    )}
+                                    <label className="flex items-start cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            className="mt-1 w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                                            checked={isException}
+                                            onChange={(e) => setIsException(e.target.checked)}
+                                        />
+                                        <div className="ml-2">
+                                            <span className="text-xs text-slate-700 font-bold block">
+                                                前回のクール分として請求する（例外対応）
+                                            </span>
+                                            <span className="text-slate-500 text-[10px] block mt-0.5">
+                                                {isException
+                                                    ? "※現在「前回のクール」が選択されています。"
+                                                    : "※チェックを入れると、一つ前のクール（過去分）として請求します。"
+                                                }
+                                            </span>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <p className="text-[10px] text-indigo-500 mt-2">
+                                    ※自動的に{isException ? "前回の" : "次回の"}定期配送枠に割り振られます。手続きは不要です。
+                                </p>
                             </div>
                         )}
 
@@ -358,7 +383,7 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                 </div>
 
                 {/* RIGHT COLUMN: Cart & Actions */}
-                <div className="w-full xl:w-1/2 flex flex-col h-full">
+                <div className="w-full min-[1200px]:w-1/2 flex flex-col h-full">
 
                     {/* Actions (Moved to Top) */}
                     <div className="mb-6 flex flex-col items-end">
@@ -380,7 +405,7 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                         <button
                             onClick={handleSubmit}
                             disabled={cart.length === 0 || isSubmitting}
-                            className={`w-full md:w-auto px-8 btn-primary py-3 text-base font-bold flex items-center justify-center shadow-lg transition-all transform hover:-translate-y-1 active:translate-y-0 ${initialOrder
+                            className={`w-full min-[1200px]:w-auto px-8 btn-primary py-3 text-base font-bold flex items-center justify-center shadow-lg transition-all transform hover:-translate-y-1 active:translate-y-0 ${initialOrder
                                 ? "bg-orange-500 hover:bg-orange-600 shadow-orange-500/30"
                                 : orderType === "臨時"
                                     ? "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30"

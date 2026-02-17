@@ -7,10 +7,14 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 export default function AdminApprovalConsole({
     orders,
-    counts
+    counts,
+    defaultStartDate,
+    defaultEndDate
 }: {
     orders: any[];
     counts: { [key: string]: number };
+    defaultStartDate?: string;
+    defaultEndDate?: string;
 }) {
     const router = useRouter();
     const pathname = usePathname();
@@ -22,8 +26,8 @@ export default function AdminApprovalConsole({
 
     const currentStatus = searchParams.get("status") ?? "pending";
     const currentType = searchParams.get("type") ?? "臨時";
-    const startDate = searchParams.get("startDate") ?? "";
-    const endDate = searchParams.get("endDate") ?? "";
+    const startDate = searchParams.get("startDate") ?? defaultStartDate ?? "";
+    const endDate = searchParams.get("endDate") ?? defaultEndDate ?? "";
 
     const handleFilterChange = (key: string, value: string) => {
         const params = new URLSearchParams(searchParams);
@@ -35,15 +39,13 @@ export default function AdminApprovalConsole({
         router.replace(`${pathname}?${params.toString()}`);
     };
 
-    // Auto-select first order logic...
+    // Auto-select first order logic... (DISABLED/UPDATED)
     useEffect(() => {
         if (orders.length > 0) {
             const stillExists = orders.find(o => o.id === selectedOrderId);
-            if (!stillExists && !selectedOrderId) { // Only auto-select if nothing selected yet or selected is gone
-                setSelectedOrderId(orders[0].id);
-            } else if (!stillExists && selectedOrderId) {
-                // specific logic: if selected item disappears (e.g. status change filter), maybe select first?
-                setSelectedOrderId(orders[0].id);
+            if (!stillExists && selectedOrderId) {
+                // If selected order disappears (e.g. status change filter), deselect
+                setSelectedOrderId(null);
             }
         } else {
             setSelectedOrderId(null);
@@ -52,14 +54,19 @@ export default function AdminApprovalConsole({
 
     const selectedOrder = orders.find(o => o.id === selectedOrderId);
 
+    // Mobile View Integration
+    // If an order is selected, show detail (right panel) on mobile. Otherwise show list (left panel).
+    const isMobileDetailView = !!selectedOrderId;
+
     const handleDataUpdate = () => {
         router.refresh();
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-140px)] min-h-[600px]">
+        <div className="flex flex-col min-[1200px]:flex-row gap-6 h-[calc(100vh-140px)] min-h-[600px]">
             {/* Left Panel: Filters & List */}
-            <div className="w-full md:w-[360px] flex-shrink-0 flex flex-col gap-4">
+            {/* On mobile: Hide if showing detail. On desktop: Always show. */}
+            <div className={`w-full min-[1200px]:w-[360px] flex-shrink-0 flex flex-col gap-4 ${isMobileDetailView ? 'hidden min-[1200px]:flex' : 'flex'}`}>
 
                 {/* Filter Card */}
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
@@ -140,7 +147,22 @@ export default function AdminApprovalConsole({
             </div>
 
             {/* Right Panel: Detail View */}
-            <div className="flex-1 min-w-0 flex flex-col">
+            {/* On mobile: Show ONLY if detailing. On desktop: Always show (or show placeholder). */}
+            <div className={`flex-1 min-w-0 flex-col ${isMobileDetailView ? 'flex' : 'hidden min-[1200px]:flex'}`}>
+
+                {/* Mobile Back Button */}
+                <div className="min-[1200px]:hidden mb-2">
+                    <button
+                        onClick={() => setSelectedOrderId(null)}
+                        className="flex items-center gap-1 text-slate-500 hover:text-slate-800 text-sm font-bold bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        一覧に戻る
+                    </button>
+                </div>
+
                 {selectedOrder ? (
                     <ApprovalOrderDetail
                         order={selectedOrder}

@@ -96,19 +96,7 @@ export default function ApprovalOrderDetail({ order, onUpdate }: ApprovalOrderDe
                     </div>
                 </div>
 
-                {order.reason && (
-                    <div className="bg-amber-50 border border-amber-200 px-4 py-3 rounded-xl max-w-sm">
-                        <div className="flex items-center gap-2 text-xs font-bold text-amber-700 mb-1">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            申請者コメント
-                        </div>
-                        <p className="text-sm text-amber-900 leading-relaxed font-medium">
-                            {order.reason}
-                        </p>
-                    </div>
-                )}
+                {/* Applicant Comment Removed */}
             </div>
 
             {/* Main Content (Table) */}
@@ -133,11 +121,12 @@ export default function ApprovalOrderDetail({ order, onUpdate }: ApprovalOrderDe
                                 <tr key={item.id} className={`group transition-all duration-200 ${isPendingItem || isPartial ? 'hover:bg-indigo-50/30' : 'bg-slate-50/40 text-slate-500'}`}>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex flex-col">
-                                            <span className={`text-base font-bold ${isPendingItem ? "text-slate-800" : "text-slate-600"}`}>{item.drugName}</span>
+                                            <span className={`text-base font-bold ${isPendingItem || isPartial ? "text-slate-800" : "text-slate-600"}`}>{item.drugName}</span>
                                             <div className="flex items-center gap-2 mt-1">
+                                                {isPendingItem && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">承認待ち</span>}
                                                 {isApproved && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700">承認済</span>}
                                                 {isPartial && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">部分承認</span>}
-                                                {isRejected && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">却下</span>}
+                                                {isRejected && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">却下</span>}
                                                 <span className="text-xs text-slate-400 font-mono bg-slate-100 px-1.5 rounded">{item.drugUnit}</span>
                                             </div>
                                         </div>

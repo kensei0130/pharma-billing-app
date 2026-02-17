@@ -107,15 +107,40 @@ export async function getAdminOrders(filters?: {
     return await baseQuery.orderBy(desc(orders.orderDate));
 }
 
-export async function getOrderStatusCounts() {
+export async function getOrderStatusCounts(filters?: {
+    startDate?: string;
+    endDate?: string;
+    type?: string[];
+}) {
+    let conditions = [];
+
+    if (filters?.startDate) {
+        conditions.push(gte(orders.orderDate, filters.startDate));
+    }
+
+    if (filters?.endDate) {
+        conditions.push(lte(orders.orderDate, `${filters.endDate}T23:59:59`));
+    }
+
+    if (filters?.type && filters.type.length > 0) {
+        // @ts-ignore
+        conditions.push(inArray(orders.type, filters.type));
+    }
+
     // Aggregate counts by status
-    const results = await db
+    const baseQuery = db
         .select({
             status: orders.status,
             count: sql<number>`count(*)`
         })
-        .from(orders)
-        .groupBy(orders.status);
+        .from(orders);
+
+    if (conditions.length > 0) {
+        // @ts-ignore
+        baseQuery.where(and(...conditions));
+    }
+
+    const results = await baseQuery.groupBy(orders.status);
 
     // Convert to object for easier consumption
     const counts = {

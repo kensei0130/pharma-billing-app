@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { orders, wards, orderItems, drugs, systemSettings } from "@/db/schema";
+import { orders, wards, orderItems, drugs, systemSettings, periodicEvents } from "@/db/schema";
 import { eq, and, desc, sql, inArray, gte, lte, like } from "drizzle-orm";
 import { getPeriodicSettings } from "./settings";
 import { getNextPayoutDates, getDeadline, isDeadlinePassed } from "@/lib/date-utils";
@@ -118,8 +118,72 @@ export async function getPeriodicCycles(startDate?: string, endDate?: string) {
             });
         }
     }
+    // Convert map to array and sort by date desc
+    return Array.from(cyclesMap.values()).sort((a, b) => b.date.localeCompare(a.date));
+}
 
-    return Array.from(cyclesMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+// NEW: Fetch cycles from periodic_events master table
+export async function getPeriodicCyclesFromEvents() {
+    // Get all events (or filter by date range if needed)
+    // For now get all and sort desc
+    const events = await db.query.periodicEvents.findMany({
+        orderBy: [desc(periodicEvents.payoutDate)],
+        with: {
+            orders: true // To count orders
+        }
+    });
+
+    return events.map(event => {
+        // Count active orders (not cancelled) - depends on your logic
+        // orders relation includes all orders.
+        const activeOrders = event.orders.filter(o => o.type === "定時");
+        const orderCount = activeOrders.length;
+
+        const pendingCount = activeOrders.filter(o => o.status === "承認待ち").length;
+        const partialCount = activeOrders.filter(o => o.status === "部分承認").length;
+        const approvedCount = activeOrders.filter(o => o.status === "承認済み").length;
+
+        return {
+            id: event.id,
+            date: event.payoutDate,
+            deadline: event.deadline,
+            isUpcoming: new Date(event.payoutDate) >= new Date(),
+            orderCount: orderCount,
+            pendingCount,
+            partialCount,
+            approvedCount,
+            status: event.status === "open" ? (new Date() > new Date(event.deadline) ? "締切後" : "受付中") : event.status
+        };
+    });
+}
+
+// Deprecated: getPeriodicCycles (Original) - kept for reference or safe deletion later
+
+// NEW: Fetch orders by Event ID
+export async function getPeriodicOrdersByEventId(eventId: number) {
+    const rawOrders = await db.query.orders.findMany({
+        where: and(
+            eq(orders.periodicEventId, eventId)
+        ),
+        with: {
+            ward: true,
+            items: {
+                with: {
+                    drug: true
+                }
+            }
+        },
+        orderBy: [desc(orders.orderDate)]
+    });
+
+    return rawOrders.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+            ...item,
+            drugName: item.drug.name,
+            drugUnit: item.drug.unit,
+        }))
+    }));
 }
 
 // Helper to get normalized date condition
@@ -159,15 +223,14 @@ export async function getPeriodicOrdersByDate(dateStr: string) {
     }));
 }
 
-export async function bulkApproveCycle(dateStr: string) {
+export async function bulkApproveCycle(eventId: number) {
     const session = await auth();
     if (session?.user?.role !== "admin") return { success: false, message: "権限がありません" };
 
     try {
-        // 1. Get all pending orders for this date
+        // 1. Get all pending orders for this event
         const targetOrders = await db.select().from(orders).where(and(
-            eq(orders.type, "定時"),
-            getDateCondition(dateStr),
+            eq(orders.periodicEventId, eventId),
             eq(orders.status, "承認待ち") // Only approve pending ones
         ));
 
@@ -176,18 +239,6 @@ export async function bulkApproveCycle(dateStr: string) {
         }
 
         const orderIds = targetOrders.map(o => o.id);
-
-        // 2. Approve all items in these orders
-        // SQLite doesn't support complex joins in update easily with Drizzle, so we iterate or use IN
-        // Approving items: set approvedQuantity = quantity, status = "承認済み"
-
-        // We need to be careful: orderItems doesn't have a direct "quantity" to copy from in a simple UPDATE statement
-        // unless we use a subquery or raw SQL. 
-        // Drizzle might support: .set({ approvedQuantity: orderItems.quantity }) ?
-        // Let's try to update items blindly where orderId IN orderIds.
-
-        // Actually, to set approvedQuantity = quantity, we need reference to the column.
-        // Drizzle: .set({ approvedQuantity: orderItems.quantity }) works?
 
         await db.update(orderItems)
             .set({

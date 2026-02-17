@@ -17,7 +17,6 @@ export default async function WardsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800">病棟マスタ管理</h2>
-                    <p className="text-slate-500 mt-1">システムを利用する病棟の登録・編集を行います。</p>
                 </div>
             </div>
 

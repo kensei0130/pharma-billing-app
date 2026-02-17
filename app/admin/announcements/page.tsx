@@ -16,7 +16,6 @@ export default async function AdminAnnouncementsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800">お知らせ管理</h2>
-                    <p className="text-slate-500 mt-1">病棟向けの周知事項の登録・編集・並び替えを行います。</p>
                 </div>
             </div>
 

@@ -161,10 +161,10 @@ export default function ConstantSetEditor({
         : [];
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[500px] flex flex-col md:flex-row overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[500px] flex flex-col min-[1200px]:flex-row overflow-hidden">
 
             {/* Sidebar: Set List */}
-            <div className="w-full md:w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
+            <div className="w-full min-[1200px]:w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
                 <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
                     <h3 className="font-bold text-slate-700">セット一覧</h3>
                     <button
@@ -266,7 +266,7 @@ export default function ConstantSetEditor({
                         <div className="p-6 flex-1 overflow-y-auto">
                             {/* Drug Addition Area */}
                             <div className="mb-8">
-                                <div className="flex flex-col xl:flex-row gap-6 items-start">
+                                <div className="flex flex-col min-[1200px]:flex-row gap-6 items-start">
                                     {/* Search Section */}
                                     <div className="flex-1 w-full relative">
                                         <label className="block text-sm font-bold text-slate-700 mb-2">① 検索して追加</label>
@@ -318,7 +318,7 @@ export default function ConstantSetEditor({
                                     </div>
 
                                     {/* Divider */}
-                                    <div className="hidden xl:block w-px bg-slate-200 self-stretch my-2"></div>
+                                    <div className="hidden min-[1200px]:block w-px bg-slate-200 self-stretch my-2"></div>
 
                                     {/* Category Section */}
                                     <div className="flex-1 w-full">

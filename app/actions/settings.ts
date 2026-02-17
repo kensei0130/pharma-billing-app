@@ -48,3 +48,57 @@ export async function updatePeriodicSettings(payoutDayOfWeek: number, deadlineDa
         return { success: false, message: "エラーが発生しました" };
     }
 }
+
+export async function getMonitorSettings() {
+    const typeSetting = await db.select().from(systemSettings).where(eq(systemSettings.key, "monitor_target_type"));
+    const rangeSetting = await db.select().from(systemSettings).where(eq(systemSettings.key, "monitor_date_range"));
+    const pendingRangeSetting = await db.select().from(systemSettings).where(eq(systemSettings.key, "monitor_pending_date_range"));
+
+    // Defaults: All types, Today (0)
+    const targetType = typeSetting.length > 0 ? typeSetting[0].value : "all";
+    const dateRange = rangeSetting.length > 0 ? parseInt(rangeSetting[0].value) : 0;
+    const pendingDateRange = pendingRangeSetting.length > 0 ? parseInt(pendingRangeSetting[0].value) : 7; // Default 7 days for pending? Or 0? Let's say 7 to be safe, or 0? 
+    // User wants to configure it. Defaulting to 7 seems reasonable to avoid cluttering with very old ignored items, or maybe 30?
+    // Let's match rangeOptions. Default 7.
+
+    return { targetType, dateRange, pendingDateRange };
+}
+
+export async function updateMonitorSettings(targetType: string, dateRange: number, pendingDateRange: number) {
+    const session = await auth();
+    if (session?.user?.role !== "admin") {
+        return { success: false, message: "権限がありません" };
+    }
+
+    try {
+        // Upsert monitor_target_type
+        const existingType = await db.select().from(systemSettings).where(eq(systemSettings.key, "monitor_target_type"));
+        if (existingType.length > 0) {
+            await db.update(systemSettings).set({ value: targetType }).where(eq(systemSettings.key, "monitor_target_type"));
+        } else {
+            await db.insert(systemSettings).values({ key: "monitor_target_type", value: targetType });
+        }
+
+        // Upsert monitor_date_range
+        const existingRange = await db.select().from(systemSettings).where(eq(systemSettings.key, "monitor_date_range"));
+        if (existingRange.length > 0) {
+            await db.update(systemSettings).set({ value: dateRange.toString() }).where(eq(systemSettings.key, "monitor_date_range"));
+        } else {
+            await db.insert(systemSettings).values({ key: "monitor_date_range", value: dateRange.toString() });
+        }
+
+        // Upsert monitor_pending_date_range
+        const existingPendingRange = await db.select().from(systemSettings).where(eq(systemSettings.key, "monitor_pending_date_range"));
+        if (existingPendingRange.length > 0) {
+            await db.update(systemSettings).set({ value: pendingDateRange.toString() }).where(eq(systemSettings.key, "monitor_pending_date_range"));
+        } else {
+            await db.insert(systemSettings).values({ key: "monitor_pending_date_range", value: pendingDateRange.toString() });
+        }
+
+        revalidatePath("/admin/settings");
+        return { success: true, message: "モニター設定を保存しました" };
+    } catch (e) {
+        console.error(e);
+        return { success: false, message: "エラーが発生しました" };
+    }
+}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { updatePeriodicSettings } from "@/app/actions/settings";
 import { useRouter } from "next/navigation";
 
-export default function SystemSettingsForm({
+export default function PeriodicSettingsForm({
     initialSettings
 }: {
     initialSettings: { payoutDayOfWeek: number; deadlineDaysBefore: number }
@@ -66,8 +66,8 @@ export default function SystemSettingsForm({
                                 type="button"
                                 onClick={() => setPayoutDay(day.value)}
                                 className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${payoutDay === day.value
-                                        ? "bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200"
-                                        : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                                    ? "bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200"
+                                    : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
                                     }`}
                             >
                                 {day.label}

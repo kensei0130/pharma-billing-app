@@ -56,7 +56,7 @@ export default function WardOrderHistory({ orders, onEdit }: { orders: Order[], 
 
     return (
         <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex flex-col min-[1200px]:flex-row justify-between items-center gap-4">
                 <h2 className="text-lg font-bold text-slate-800 flex items-center">
                     <span className="bg-slate-600 text-white p-1.5 rounded-md mr-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

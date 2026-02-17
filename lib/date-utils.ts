@@ -73,3 +73,46 @@ export function toLocalISOString(date: Date): string {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
+
+/**
+ * Calculates the target payout date based on current time and deadline settings.
+ * If the deadline for the upcoming payout date has passed, returns the payout date for the following week.
+ */
+export function getNextPayoutDate(now: Date, payoutDayOfWeek: number, deadlineDays: number): Date {
+    const current = new Date(now);
+    current.setHours(0, 0, 0, 0);
+
+    // 1. Find nearest payout day (Today or Future)
+    let diff = payoutDayOfWeek - current.getDay();
+    if (diff < 0) {
+        diff += 7;
+    }
+
+    const candidate = new Date(current);
+    candidate.setDate(current.getDate() + diff);
+
+    // 2. Check deadline
+    // If today is Wednesday 10:00, Payout is Thursday, Deadline 2 days (Tuesday 23:59).
+    // Deadline passed? Yes.
+    // Then target next week.
+    const deadline = getDeadline(candidate, deadlineDays);
+
+    if (now > deadline) {
+        candidate.setDate(candidate.getDate() + 7);
+    }
+
+    return candidate;
+}
+
+/**
+ * Calculates the previous payout date (regardless of deadline).
+ * Used for exception handling (e.g., submitting late for the previous cycle).
+ */
+export function getPreviousPayoutDate(now: Date, payoutDayOfWeek: number, deadlineDays: number): Date {
+    // We reuse getNextPayoutDate to find the "Next Valid" date, then subtract 7 days.
+    // This correctly identifies the "Previous" cycle relative to the standard logic.
+    const nextValid = getNextPayoutDate(now, payoutDayOfWeek, deadlineDays);
+    const previous = new Date(nextValid);
+    previous.setDate(previous.getDate() - 7);
+    return previous;
+}
