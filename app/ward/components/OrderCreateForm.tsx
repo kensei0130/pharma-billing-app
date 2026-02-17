@@ -429,8 +429,10 @@ export default function OrderCreateForm({ drugs, initialOrder, onCancelEdit, per
                     <div className="flex-1">
                         {cart.length === 0 ? (
                             <div className="text-center py-20 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 flex flex-col items-center justify-center h-[300px]">
-                                <span className="text-4xl mb-4">👈</span>
-                                <p className="font-bold">左側から薬品を追加してください</p>
+                                <svg className="w-12 h-12 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <p className="font-bold">薬品を追加してください</p>
                                 <p className="text-xs mt-2">検索またはカテゴリから選択できます</p>
                             </div>
                         ) : (
