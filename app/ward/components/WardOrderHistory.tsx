@@ -138,7 +138,9 @@ export default function WardOrderHistory({ orders, onEdit }: { orders: Order[], 
                                 )}
                             </td>
                             <td className="px-6 py-4">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.type === '定時' ? 'bg-green-100 text-green-800' : 'bg-indigo-100 text-indigo-800'
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.type === '返却' ? 'bg-red-100 text-red-800' :
+                                    order.type === '定時' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-green-100 text-green-800'
                                     }`}>
                                     {order.type || '臨時'}
                                 </span>

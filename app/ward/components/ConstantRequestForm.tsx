@@ -87,7 +87,7 @@ export default function ConstantRequestForm({ constantDrugs }: { constantDrugs: 
         <div className="p-6 min-[1200px]:p-8 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center">
-                    <span className="bg-green-100 text-green-600 p-2 rounded-lg mr-3 text-lg">📦</span>
+                    <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3 text-lg">📦</span>
                     セット請求 (一括作成)
                 </h2>
             </div>
@@ -101,25 +101,25 @@ export default function ConstantRequestForm({ constantDrugs }: { constantDrugs: 
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                         <label className="block text-sm font-bold text-slate-700 mb-2">請求種別</label>
                         <div className="flex space-x-4">
-                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "臨時" ? "bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
+                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "臨時" ? "bg-green-50 border-green-500 ring-1 ring-green-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
                                 <input
                                     type="radio"
                                     name="constantOrderType"
                                     value="臨時"
                                     checked={orderType === "臨時"}
                                     onChange={() => setOrderType("臨時")}
-                                    className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                    className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
                                 />
                                 <span className="ml-2 text-sm font-medium text-slate-700">臨時請求</span>
                             </label>
-                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "定時" ? "bg-green-50 border-green-500 ring-1 ring-green-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
+                            <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${orderType === "定時" ? "bg-blue-50 border-blue-500 ring-1 ring-blue-500" : "bg-white border-slate-300 hover:border-slate-400"}`}>
                                 <input
                                     type="radio"
                                     name="constantOrderType"
                                     value="定時"
                                     checked={orderType === "定時"}
                                     onChange={() => setOrderType("定時")}
-                                    className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+                                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                                 />
                                 <span className="ml-2 text-sm font-medium text-slate-700">定期請求</span>
                             </label>
@@ -135,7 +135,7 @@ export default function ConstantRequestForm({ constantDrugs }: { constantDrugs: 
                                     key={set.id}
                                     onClick={() => setSelectedSetId(set.id)}
                                     className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all flex justify-between items-center ${selectedSetId === set.id
-                                        ? "bg-green-600 text-white shadow-md shadow-green-200"
+                                        ? "bg-blue-600 text-white shadow-md shadow-blue-200"
                                         : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
                                         }`}
                                 >
@@ -157,7 +157,7 @@ export default function ConstantRequestForm({ constantDrugs }: { constantDrugs: 
                     <div className="flex flex-col gap-4 mb-4">
                         <div className="flex items-center justify-between">
                             <h3 className="font-bold text-slate-700 text-lg">{currentSet?.name || "セット選択"}</h3>
-                            <span className="text-xs font-medium px-3 py-1 bg-green-50 text-green-700 rounded-full border border-green-200">
+                            <span className="text-xs font-medium px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
                                 {displayedDrugs.length} 品目登録済
                             </span>
                         </div>
@@ -170,14 +170,14 @@ export default function ConstantRequestForm({ constantDrugs }: { constantDrugs: 
 
                         <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
                             <span className="text-sm text-slate-600 font-medium ml-2">
-                                選択中: <span className="text-green-700 font-bold text-xl">{totalItems}</span> 品目
+                                選択中: <span className="text-blue-700 font-bold text-xl">{totalItems}</span> 品目
                             </span>
                             <button
                                 onClick={handleSubmit}
                                 disabled={totalItems === 0 || isSubmitting}
                                 className={`px-8 py-2.5 text-white font-bold rounded-lg shadow-md active:transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${orderType === "定時"
-                                    ? "bg-green-600 hover:bg-green-700 shadow-green-200"
-                                    : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200"
+                                    ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
+                                    : "bg-green-600 hover:bg-green-700 shadow-green-200"
                                     }`}
                             >
                                 {isSubmitting ? "送信中..." : `${orderType}請求を送信`}
